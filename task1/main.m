@@ -21,7 +21,7 @@ end
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
 
-for k = 1 : 6 %length(theFiles)
+for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
     fprintf(1, 'Now reading %s\n', fullFileName);
@@ -42,7 +42,7 @@ for k = 1 : 6 %length(theFiles)
     for gti = 1 : size(gt_rectangles,1)
         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
-        %patch(px, py,'Green', 'FaceColor', [0,1,0], 'FaceAlpha', 0.3);
+        patch(px, py,'Green', 'FaceColor', [0,1,0], 'FaceAlpha', 0.3);
     end
     
     hold off
@@ -50,16 +50,21 @@ for k = 1 : 6 %length(theFiles)
     % Contrast enhancement
     contrast = imadjust(original, stretchlim(original)); %%colored
     
+    % just the stuff that's red or blue
     just_red = imsubtract(imsubtract(contrast(:,:,1),contrast(:,:,2)),contrast(:,:,3));
-    just_green = imsubtract(imsubtract(contrast(:,:,2),contrast(:,:,1)),contrast(:,:,3));
     just_blue = imsubtract(imsubtract(contrast(:,:,3),contrast(:,:,2)),contrast(:,:,1));
     
-    just_red = imadjust(just_red,stretchlim(just_red));
-    just_green = imadjust(just_green,stretchlim(just_green));
-    just_blue = imadjust(just_blue,stretchlim(just_blue));
+    % to highlight also dark stuff
+    just_red = imbinarize(imadjust(just_red,stretchlim(just_red)));
+    just_blue = imbinarize(imadjust(just_blue,stretchlim(just_blue)));
     
+    % clean some noise
+    % just_red = imclose(imopen(just_red,strel('rectangle',[3 3])),strel('disk',2));
+    % just_blue = imclose(imopen(just_blue,strel('rectangle',[3 3])),strel('disk',2));
+    
+    % plot da things
     subplot(2,2,2);imshow(just_red);title('Red', 'FontSize', 15);
-    subplot(2,2,3);imshow(just_green);title('Green', 'FontSize', 15);
+    subplot(2,2,3);imshow(contrast);title('Contrast', 'FontSize', 15);
     subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
     
     
