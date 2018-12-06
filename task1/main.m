@@ -21,7 +21,7 @@ end
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
 
-for k = 1 : 20 %length(theFiles)
+for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
     fprintf(1, 'Now reading %s\n', fullFileName);
@@ -60,11 +60,20 @@ for k = 1 : 20 %length(theFiles)
     % put together red, blue and edges on green
     red_n_blue = cat(3,uint8(255*just_red),edge_gray*255,uint8(255*just_blue));
     
+    Rmin = 20;
+    Rmax = 100;
+    [centersRed, radiiRed] = imfindcircles(just_red,[Rmin Rmax],'ObjectPolarity','bright');
+    [centersBlue, radiiBlue] = imfindcircles(just_blue,[Rmin Rmax],'ObjectPolarity','bright');
+    
+    
     % plot da things
     %subplot(1,2,2);
     imshow(red_n_blue);title('Red&Blue edges in green', 'FontSize', 15);
     %subplot(2,2,3);imshow(edge_gray);title('Edges gray', 'FontSize', 15);
     %subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
+    
+    viscircles(centersRed, radiiRed,'LineStyle','--');
+    viscircles(centersBlue, radiiBlue,'LineStyle','--');
     
     % draw ground truth
     hold on
