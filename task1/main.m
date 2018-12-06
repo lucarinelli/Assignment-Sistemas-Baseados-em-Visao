@@ -44,6 +44,7 @@ for k = 1 : length(theFiles)-20
     % just the stuff that's red or blue
     just_red = imsubtract(imsubtract(contrast(:,:,1),contrast(:,:,2)),contrast(:,:,3));
     just_blue = imsubtract(imsubtract(contrast(:,:,3),contrast(:,:,2)),contrast(:,:,1));
+    %just_white = 
     
     % to highlight also dark stuff
     % TODO Loose the binarization to take more stuff
@@ -60,7 +61,7 @@ for k = 1 : length(theFiles)-20
     % put together red, blue and edges on green
     red_n_blue = cat(3,uint8(255*just_red),edge_gray*255,uint8(255*just_blue));
     
-    Rmin = 20;
+    Rmin = 6;
     Rmax = 100;
     [centersRed, radiiRed] = imfindcircles(just_red,[Rmin Rmax],'ObjectPolarity','bright');
     [centersBlue, radiiBlue] = imfindcircles(just_blue,[Rmin Rmax],'ObjectPolarity','bright');
@@ -68,7 +69,7 @@ for k = 1 : length(theFiles)-20
     
     % plot da things
     %subplot(1,2,2);
-    imshow(red_n_blue);title('Red&Blue edges in green', 'FontSize', 15);
+    imshow(red_n_blue);title('Red&Blue edges in green '+fullFileName, 'FontSize', 15);
     %subplot(2,2,3);imshow(edge_gray);title('Edges gray', 'FontSize', 15);
     %subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
     
