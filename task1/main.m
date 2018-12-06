@@ -21,7 +21,7 @@ end
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
 
-for k = 1 : length(theFiles)
+for k = 1 : 20 %length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
     fprintf(1, 'Now reading %s\n', fullFileName);
@@ -32,8 +32,39 @@ for k = 1 : length(theFiles)
     original = imread(fullFileName);
     
     figure();
-    subplot(2,2,1);
-    imshow(original);title('Original', 'FontSize', 15);  % Display image.
+    %subplot(1,2,1);
+    %imshow(original);title('Original', 'FontSize', 15);  % Display image.
+    
+    % Contrast enhancement
+    contrast = imadjust(original, stretchlim(original)); %%colored
+    
+    con_img_gray = rgb2gray(contrast); %%gray
+    con_img_gray = imadjust(con_img_gray, stretchlim(con_img_gray));
+    
+    % just the stuff that's red or blue
+    just_red = imsubtract(imsubtract(contrast(:,:,1),contrast(:,:,2)),contrast(:,:,3));
+    just_blue = imsubtract(imsubtract(contrast(:,:,3),contrast(:,:,2)),contrast(:,:,1));
+    
+    % to highlight also dark stuff
+    % TODO Loose the binarization to take more stuff
+    just_red = imbinarize(imadjust(just_red,stretchlim(just_red)));
+    just_blue = imbinarize(imadjust(just_blue,stretchlim(just_blue)));
+    
+    % clean some noise
+    % just_red = imclose(imopen(just_red,strel('rectangle',[3 3])),strel('disk',2));
+    % just_blue = imclose(imopen(just_blue,strel('rectangle',[3 3])),strel('disk',2));
+    
+    % find edges on gray
+    edge_gray = edge(con_img_gray,'Canny');
+    
+    % put together red, blue and edges on green
+    red_n_blue = cat(3,uint8(255*just_red),edge_gray*255,uint8(255*just_blue));
+    
+    % plot da things
+    %subplot(1,2,2);
+    imshow(red_n_blue);title('Red&Blue edges in green', 'FontSize', 15);
+    %subplot(2,2,3);imshow(edge_gray);title('Edges gray', 'FontSize', 15);
+    %subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
     
     % draw ground truth
     hold on
@@ -42,31 +73,10 @@ for k = 1 : length(theFiles)
     for gti = 1 : size(gt_rectangles,1)
         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
-        patch(px, py,'Green', 'FaceColor', [0,1,0], 'FaceAlpha', 0.3);
+        patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
     end
     
     hold off
-    
-    % Contrast enhancement
-    contrast = imadjust(original, stretchlim(original)); %%colored
-    
-    % just the stuff that's red or blue
-    just_red = imsubtract(imsubtract(contrast(:,:,1),contrast(:,:,2)),contrast(:,:,3));
-    just_blue = imsubtract(imsubtract(contrast(:,:,3),contrast(:,:,2)),contrast(:,:,1));
-    
-    % to highlight also dark stuff
-    just_red = imbinarize(imadjust(just_red,stretchlim(just_red)));
-    just_blue = imbinarize(imadjust(just_blue,stretchlim(just_blue)));
-    
-    % clean some noise
-    % just_red = imclose(imopen(just_red,strel('rectangle',[3 3])),strel('disk',2));
-    % just_blue = imclose(imopen(just_blue,strel('rectangle',[3 3])),strel('disk',2));
-    
-    % plot da things
-    subplot(2,2,2);imshow(just_red);title('Red', 'FontSize', 15);
-    subplot(2,2,3);imshow(contrast);title('Contrast', 'FontSize', 15);
-    subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
-    
     
     %subplot(2,1,2);imshow(con_img)
     %con_img_gray = rgb2gray(con_img); %%gray
