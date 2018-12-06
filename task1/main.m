@@ -21,7 +21,7 @@ end
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
 
-for k = 1 : length(theFiles)
+for k = 1 : length(theFiles)-20
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
     fprintf(1, 'Now reading %s\n', fullFileName);
