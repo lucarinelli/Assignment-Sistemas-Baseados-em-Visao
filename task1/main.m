@@ -69,7 +69,7 @@ for k = 1 : length(theFiles)
     
     % plot da things
     %subplot(1,2,2);
-    imshow(red_n_blue);title('Red&Blue edges in green '+fullFileName, 'FontSize', 15);
+    imshow(red_n_blue);title(strcat('Red&Blue edges in green ',fullFileName), 'FontSize', 15);
     %subplot(2,2,3);imshow(edge_gray);title('Edges gray', 'FontSize', 15);
     %subplot(2,2,4);imshow(just_blue);title('Blue', 'FontSize', 15);
     
