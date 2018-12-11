@@ -1,0 +1,14 @@
+clear all;
+
+outer_rad = 20;
+
+center = outer_rad+2; 
+mask1_size = center*2;
+
+[x,y] = meshgrid(1:mask1_size,1:mask1_size);
+
+distance = (x-center).^2+(y-center).^2;
+mask = distance<outer_rad^2;
+
+figure(1);
+imshow(mask)

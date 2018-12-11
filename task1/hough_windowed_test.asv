@@ -1,0 +1,33 @@
+original = imread('images/6_1.png');
+
+just_red = createMaskRed(original);
+skel_red = bwmorph(just_red,'skel',Inf);
+
+figure();
+imshow(skel_red);
+
+for i=0:33 % slide horizontaly
+    for j=0:19 % slide vertically
+        [H,T,R] = hough(skel_red(i*40:(i+2)*40,j*40:(j+2)*40));
+        lines = houghlines(BW,T,R,P,'FillGap',5,'MinLength',7);
+        
+    end
+end
+
+figure, imshow(original), hold on
+max_len = 0;
+for k = 1:length(lines)
+   xy = [lines(k).point1; lines(k).point2];
+   plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
+
+   % Plot beginnings and ends of lines
+   plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+   plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+
+   % Determine the endpoints of the longest line segment
+   len = norm(lines(k).point1 - lines(k).point2);
+   if ( len > max_len)
+      max_len = len;
+      xy_long = xy;
+   end
+end
