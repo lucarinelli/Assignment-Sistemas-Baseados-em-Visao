@@ -10,7 +10,7 @@ load('ground_truth_2.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'danger';
+imagesFolder = 'images';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -20,6 +20,12 @@ end
 % Get a list of all files in the folder with the desired file name pattern.
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
+
+fprintf(1, 'START TEST WITH %d IMAGES\n', length(theFiles));
+total_score=0;
+total_mismatch = 0;
+mism_names = {};
+dunno_names = {};
 
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
@@ -68,7 +74,7 @@ for k = 1 : length(theFiles)
     [centersRedDark, radiiRedDark] = imfindcircles(redMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
 
     
-    %% MASKS
+    %% MASKS [SHOULD BE AS DYNAMIC AS POSSIBLE IDEALLY]
     if size(centersDark,1)==1 %MAYBE WE DON'T NEED THIS
         circ_mask1 = circularMask(centersDark,radiiDark+2,size(gray));       
     else
@@ -93,6 +99,12 @@ for k = 1 : length(theFiles)
         circ_mask6 = circularMask(size(gray)/2,mean(size(gray))/2,size(gray)) - circ_mask7;
     end
     
+    rect_mask8 = roipoly(gray,[5*size(gray,2)/12 5*size(gray,2)/12 7*size(gray,2)/12 7*size(gray,2)/12],[1 size(gray,1) 1 size(gray,1)]);
+    quasicirc_mask9 = circ_mask1 - rect_mask8;
+    
+    diam_mask10 = roipoly(gray,[size(gray,2)/2 size(gray,2)/4 size(gray,2)/2 3*size(gray,2)/4],[size(gray,1)/4 size(gray,1)/2 3*size(gray,1)/4 size(gray,1)/2]);
+    diam_mask11 = roipoly(gray,[size(gray,2)/2 1 size(gray,2)/2 size(gray,2)],[1 size(gray,1)/2 size(gray,1) size(gray,1)/2]) - diam_mask10;
+    
     %% SCORING 
     
     score_blue1 = sum(sum(circ_mask1.*blueMask))/sum(sum(circ_mask1));
@@ -107,8 +119,38 @@ for k = 1 : length(theFiles)
     score_red6 = sum(sum(circ_mask6.*redMask))/sum(sum(circ_mask6));
     score_red7 = sum(sum(circ_mask7.*redMask))/sum(sum(circ_mask7));
     
+    score_white6 = sum(sum(circ_mask6.*whitishMask))/sum(sum(circ_mask6));
+    score_white7 = sum(sum(circ_mask7.*whitishMask))/sum(sum(circ_mask7));
+    score_yellow7 = sum(sum(circ_mask7.*yellowMask))/sum(sum(circ_mask7));
+    
+    score_white8 = sum(sum(rect_mask8.*whitishMask))/sum(sum(rect_mask8));
+    score_red9 = sum(sum(quasicirc_mask9.*redMask))/sum(sum(quasicirc_mask9));
+    
+    score_yellow10 = sum(sum(diam_mask10.*yellowMask))/sum(sum(diam_mask10));
+    score_white11 = sum(sum(diam_mask11.*whitishMask))/sum(sum(diam_mask11));
+    
     %% DETECTION    
     result='dunno';
+    
+    %% DETECT STOP/FORBIDDEN(?) [REALLY WEAK]
+    if score_red9 > 0.6 && score_white8 > 0.2
+        result = 'other';
+    end
+    
+    %% DETECT DANGER (Needs polygon/line recognition) [REALLY WEAK]
+    if score_red2 > 0.5 && score_red3 < 0.5
+        result = 'danger';
+    end
+    
+    %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
+    if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2
+        result = 'other';
+    end
+    
+    %% DETECT HAVE PRIORITY
+    if score_yellow10 > 0.5 && score_white11 > 0.5
+        result = 'other';
+    end
     
     %% DETECT MANDATORY
     if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
@@ -123,53 +165,52 @@ for k = 1 : length(theFiles)
     if score_red6 > 0.5 && score_red7 < 0.5
         if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
             result = 'prohibitory';
-        elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
+        elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
             result = 'prohibitory';
         end
     end
-    
-    %% DETECT DANGER
-    if score_red2 > 0.5 && score_red3 < 0.5
-        result = 'danger';
-%         if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
-%             result = 'prohibitory';
-%         elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
-%             result = 'prohibitory';
-%         end
-    end
-    
-    %% DETECT GIVE PRIORITY
-    
-    %% DETECT HAVE PRIORITY
-    
-    %% DETECT STOP/FORBIDDEN(?)
     
     %% PRINT STUFF
     
     gt_index = find(strcmp({ground_truth_2.filename}, baseFileName)==1);
     gt_name = ground_truth_2(gt_index).name;
     
-    figure();imshow(original);
+    %figure();imshow(original);
     % Plot bright circles in blue
-    viscircles(centersBright, radiiBright,'Color','g');
+    %viscircles(centersBright, radiiBright,'Color','g');
     % Plot dark circles in dashed red boundaries
-    viscircles(centersDark, radiiDark,'LineStyle','--','Color','g');
+    %viscircles(centersDark, radiiDark,'LineStyle','--','Color','g');
     % Plot dark circles in dashed red boundaries
-    viscircles(centersBlueDark, radiiBlueDark,'LineStyle','--','Color','b');
+    %viscircles(centersBlueDark, radiiBlueDark,'LineStyle','--','Color','b');
     % Plot bright circles in blue
-    viscircles(centersBlueBright, radiiBlueBright,'Color','b');
+    %viscircles(centersBlueBright, radiiBlueBright,'Color','b');
     % Plot dark circles in dashed red boundaries
-    viscircles(centersRedDark, radiiRedDark,'LineStyle','--','Color','r');
+    %viscircles(centersRedDark, radiiRedDark,'LineStyle','--','Color','r');
     % Plot bright circles in blue
-    viscircles(centersRedBright, radiiRedBright,'Color','r');
+    %viscircles(centersRedBright, radiiRedBright,'Color','r');
     
     if(strcmp(result, gt_name)==1)
-        title(strcat('Correct! ',result,baseFileName));
+        %title(strcat('Correct! ',result,baseFileName));
+        fprintf(1, 'Correct! %s %s\n',result,baseFileName);
+        total_score = total_score + 1;
     else
-        title(strcat('\fontsize{16}\color{red}WRONG ',result,baseFileName))
-        fprintf(1, 'r6 %d r7 %d b %d w %d\n', score_red6, score_red7, score_blue1, score_white1);
+        %title(strcat('\fontsize{16}\color{red}WRONG ',result,baseFileName))
+        if(strcmp(result,'dunno')~=1)
+            mism_names = [mism_names; baseFileName];
+            total_mismatch = total_mismatch + 1;
+        else
+            dunno_names = [dunno_names; baseFileName];
+        end
+        fprintf(1, '----WRONG! gt=%s!=%s=res file %s\n',gt_name,result,baseFileName);
+        fprintf(1, 'b1 %d |w1 %d |r2 %d |r3 %d\nr4 %d |r5 %d |r6 %d |r7 %d\nw6 %d |w7 %d |y7 %d |w8 %d\nr9 %d |y10 %d |w11 %d\n',score_blue1,score_white1,score_red2,score_red3,score_red4,score_red5,score_red6,score_red7,score_white6,score_white7,score_yellow7,score_white8,score_red9, score_yellow10, score_white11);
     end
     
-    
+    fprintf(1, 'Temp score %d/%d\n',total_score,k);
+    fprintf(1, 'Temp mism. %d/%d\n',total_mismatch,k);
     drawnow; % Force display to update immediately.
 end
+
+fprintf(1, 'TOTAL SCORE %d/%d\n',total_score,length(theFiles));
+fprintf(1, 'TOTAL MISM. %d/%d\n',total_mismatch,length(theFiles));
+mism_names
+dunno_names
