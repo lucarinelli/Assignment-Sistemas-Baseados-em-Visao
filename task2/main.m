@@ -10,7 +10,7 @@ load('ground_truth_2.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'images';
+imagesFolder = 'danger';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -101,6 +101,9 @@ for k = 1 : length(theFiles)
     score_red2 = sum(sum(tria_mask2.*redMask))/sum(sum(tria_mask2));
     score_red4 = sum(sum(tria_mask4.*redMask))/sum(sum(tria_mask4));
     
+    score_red3 = sum(sum(tria_mask3.*redMask))/sum(sum(tria_mask3));
+    score_red5 = sum(sum(tria_mask5.*redMask))/sum(sum(tria_mask5));
+    
     score_red6 = sum(sum(circ_mask6.*redMask))/sum(sum(circ_mask6));
     score_red7 = sum(sum(circ_mask7.*redMask))/sum(sum(circ_mask7));
     
@@ -116,7 +119,7 @@ for k = 1 : length(theFiles)
         end
     end
     
-    %% DETECT PROHIBITORY TO BE IMPROVED
+    %% DETECT PROHIBITORY (TO BE IMPROVED?)
     if score_red6 > 0.5 && score_red7 < 0.5
         if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
             result = 'prohibitory';
@@ -124,6 +127,22 @@ for k = 1 : length(theFiles)
             result = 'prohibitory';
         end
     end
+    
+    %% DETECT DANGER
+    if score_red2 > 0.5 && score_red3 < 0.5
+        result = 'danger';
+%         if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
+%             result = 'prohibitory';
+%         elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
+%             result = 'prohibitory';
+%         end
+    end
+    
+    %% DETECT GIVE PRIORITY
+    
+    %% DETECT HAVE PRIORITY
+    
+    %% DETECT STOP/FORBIDDEN(?)
     
     %% PRINT STUFF
     
