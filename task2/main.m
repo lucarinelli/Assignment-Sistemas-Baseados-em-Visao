@@ -57,39 +57,34 @@ for k = 1 : length(theFiles)
     % Find all the dark circles in the image
     [centersDark, radiiDark] = imfindcircles(gray, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.96);
     
-    if size(centersDark,1)==1
-        outer_rad = radiiDark+2;
-        center = centersDark;
-
-        [x,y] = meshgrid(1:size(gray,2),1:size(gray,1));
-
-        distance = (x-center(1)).^2+(y-center(2)).^2;
-        circ_mask = distance<outer_rad^2;
-        
-        score_blue = sum(sum(circ_mask.*blueMask))/sum(sum(circ_mask));
-        
-        fprintf(1, 'Score blue %d\n', score_blue);
-        if score_blue > 0.5
-            result='mandatory';
-        else
-            result='dunno';
-        end
+    % Find all the blue bright circles in the image
+    [centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
+    % Find all the blue dark circles in the image
+    [centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
+    
+    if size(centersDark,1)==1 %MAYBE WE DON'T NEED THIS
+        circ_mask1 = circularMask(centersDark,radiiDark+2,size(gray));       
     else
-        outer_rad = mean(size(gray));
-        center = size(gray)/2;
-
-        [x,y] = meshgrid(1:size(gray,2),1:size(gray,1));
-
-        distance = (x-center(1)).^2+(y-center(2)).^2;
-        circ_mask = distance<outer_rad^2;
+        circ_mask1 = circularMask(size(gray)/2,mean(size(gray)),size(gray));
+    end
+    tria_mask3 = roipoly(gray,[size(gray,2)/2 size(gray,2)/4 3*size(gray,2)/4],[size(gray,1)/4 3*size(gray,1)/4 3*size(gray,1)/4]);
+    tria_mask2 = roipoly(gray,[size(gray,2)/2 1 size(gray,2)],[1 size(gray,1) size(gray,1)])-tria_mask3;
+    
+    tria_mask5 = roipoly(gray,[size(gray,2)/4 3*size(gray,2)/4 size(gray,2)/2],[size(gray,1)/4 size(gray,1)/4 3*size(gray,1)/4]);
+    tria_mask4 = roipoly(gray,[1 size(gray,2) size(gray,2)/2],[1 1 size(gray,1)])-tria_mask5;
+    
+    score_blue1 = sum(sum(circ_mask1.*blueMask))/sum(sum(circ_mask1));
+    score_white1 = sum(sum(circ_mask1.*whitishMask))/sum(sum(circ_mask1));
+    
+    score_red2 = sum(sum(tria_mask2.*redMask))/sum(sum(tria_mask2));
+    score_red4 = sum(sum(tria_mask4.*redMask))/sum(sum(tria_mask4));
         
-        score_blue = sum(sum(circ_mask.*blueMask))/sum(sum(circ_mask));
-        
-        fprintf(1, 'Score blue %d\n', score_blue);
-        if score_blue > 0.5
+    result='dunno';
+    if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
+        if size(centersBlueBright,1)==1
             result='mandatory';
-        else
-            result='dunno';
+        elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
+            result='mandatory';
         end
     end
     
@@ -98,14 +93,18 @@ for k = 1 : length(theFiles)
     
     figure();imshow(original);
     % Plot bright circles in blue
-    viscircles(centersBright, radiiBright,'Color','b');
+    %viscircles(centersBright, radiiBright,'Color','b');
     % Plot dark circles in dashed red boundaries
-    viscircles(centersDark, radiiDark,'LineStyle','--');
+    %viscircles(centersDark, radiiDark,'LineStyle','--');
+    % Plot dark circles in dashed red boundaries
+    viscircles(centersBlueDark, radiiBlueDark,'LineStyle','--');
+    % Plot bright circles in blue
+    viscircles(centersBlueBright, radiiBlueBright,'Color','b');
     
     if(strcmp(result, gt_name)==1)
-        title(strcat('Correct! ',result));
+        title(strcat('Correct! ',result,baseFileName));
     else
-        title(strcat('\fontsize{16}\color{red}WRONG ',result))
+        title(strcat('\fontsize{16}\color{red}WRONG ',result,baseFileName))
     end
     
     
