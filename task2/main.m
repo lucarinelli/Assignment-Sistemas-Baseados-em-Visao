@@ -1,3 +1,5 @@
+% "Nothing short of everything will really do."
+
 % reset everything and close all open windows
 clear all
 close all
@@ -10,9 +12,8 @@ load('ground_truth_2.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'danger';
-% Check to make sure that folder actually exists.  Warn user if it doesn't.
-if ~isdir(imagesFolder)
+imagesFolder = 'images';
+if ~isdir(imagesFolder) % Check to make sure that folder actually exists.  Warn user if it doesn't.
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
   uiwait(warndlg(errorMessage));
   return;
@@ -43,7 +44,10 @@ for k = 1 : length(theFiles)
     yellowMask = maskYellow(contrast);
     whitishMask = maskWhitish(contrast);
     gray = rgb2gray(contrast);
+%     hsv = rgb2hsv(contrast);
+%     gray_hsv = rgb2gray(hsv);
     edges = edge(gray,'canny');
+%     edges_hsv = edge(gray_hsv);
     
 %     figure();
 %     subplot(3,2,1);imshow(redMask);title('R');
@@ -75,16 +79,48 @@ for k = 1 : length(theFiles)
     
     %% LINES
     
-    [H,T,R] = hough(edges);
-    imshow(H,[],'XData',T,'YData',R,'InitialMagnification','fit');
-    xlabel('\theta'), ylabel('\rho');
-    axis on, axis normal, hold on;
+    %              i1 gprio       i2 danger      i3 danger    14 gprio
+    ranges_theta = {-25:-0.25:-35; -25:-0.25:-35; 25:0.25:35; 25:0.25:35};% -80:-0.50:-89.5; 80:0.5:89.5};
+    ranges_rho = [-0.15 0.15; 0.2 0.6; 0.8 1; 0.3 0.6]*mean(size(gray));
+    lines = []; 
+    
+    l_sides = [0 0 0 0];
+    for i = 1 : size(ranges_theta,1)
+        [H,T,R] = hough(edges,'Theta',ranges_theta{i});
 
-    P  = houghpeaks(H,8,'threshold',ceil(0.3*max(H(:))));
-    x = T(P(:,2)); y = R(P(:,1));
-    plot(x,y,'s','color','white');
+        P  = houghpeaks(H,1,'threshold',ceil(0.2*max(H(:))));
 
-    lines = houghlines(edges,T,R,P,'FillGap',5,'MinLength',15);
+        lines_temp = houghlines(edges,T,R,P,'FillGap',5,'MinLength',mean(size(gray))/2);
+        if size(lines_temp)~=0
+            for j=1:size(lines_temp)
+                if lines_temp(j).rho > ranges_rho(i,1) && lines_temp(j).rho < ranges_rho(i,2)
+                    fprintf(1,'i %d rho %d\n',i,lines_temp(j).rho/mean(size(gray)));
+                    lines = [lines; lines_temp(j)'];
+                    l_sides(i) = l_sides(i) + 1;
+                end
+            end
+        end
+    end
+    
+    red_lines = [];
+    
+    redl_sides = [0 0 0 0];
+    for i = 1 : size(ranges_theta,1)
+        [H,T,R] = hough(redMask,'Theta',ranges_theta{i});
+
+        P  = houghpeaks(H,1,'threshold',ceil(0.2*max(H(:))));
+
+        lines_temp = houghlines(redMask,T,R,P,'FillGap',5,'MinLength',mean(2*size(gray))/3);
+        if size(lines_temp)~=0
+            for j=1:size(lines_temp)
+                if i==3
+                    fprintf(1,'i %d rho %d\n',i,lines_temp(j).rho/mean(size(gray)));
+                    red_lines = [red_lines; lines_temp(j)'];
+                    redl_sides(i) = redl_sides(i) + 1;
+                end
+            end
+        end
+    end
 
     
     %% MASKS [SHOULD BE AS DYNAMIC AS POSSIBLE IDEALLY]
@@ -143,16 +179,11 @@ for k = 1 : length(theFiles)
     score_white11 = sum(sum(diam_mask11.*whitishMask))/sum(sum(diam_mask11));
     
     %% DETECTION    
-    result='dunno';
+    result='unknown';
     
     %% DETECT STOP/FORBIDDEN(?) [REALLY WEAK]
-    if score_red9 > 0.6 && score_white8 > 0.2
+    if score_red9 > 0.55 && score_white8 > 0.19
         result = 'other';
-    end
-    
-    %% DETECT DANGER (Needs polygon/line recognition) [REALLY WEAK]
-    if score_red2 > 0.5 && score_red3 < 0.5
-        result = 'danger';
     end
     
     %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
@@ -163,6 +194,15 @@ for k = 1 : length(theFiles)
     %% DETECT HAVE PRIORITY
     if score_yellow10 > 0.5 && score_white11 > 0.5
         result = 'other';
+    end
+    
+    %% DETECT DANGER (Needs polygon/line recognition) [WEAK]
+    if (score_red2 > 0.5 && score_red3 < 0.5)% && score_red9 < 0.6) %&& (redl_sides(2)>0||l_sides(2)>0)||(redl_sides(3)>0||l_sides(3)>0))
+        result = 'danger';
+    end
+    
+    if (l_sides(2)>0 ||(redl_sides(2) > 0 && score_red9< 0.5))&&(l_sides(3) > 0 ||(redl_sides(3) > 0 && score_red9< 0.5))
+        result = 'danger';
     end
     
     %% DETECT MANDATORY
@@ -200,6 +240,16 @@ for k = 1 : length(theFiles)
        plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
 
     end
+    
+    for i = 1:length(red_lines)
+       xy = [red_lines(i).point1; red_lines(i).point2];
+       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
+
+       % Plot beginnings and ends of lines
+       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+
+    end
 
     hold off
     
@@ -222,7 +272,7 @@ for k = 1 : length(theFiles)
         total_score = total_score + 1;
     else
         %title(strcat('\fontsize{16}\color{red}WRONG ',result,baseFileName))
-        if(strcmp(result,'dunno')~=1)
+        if(strcmp(result,'unknown')~=1)
             mism_names = [mism_names; baseFileName];
             total_mismatch = total_mismatch + 1;
         else
