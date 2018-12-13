@@ -10,7 +10,7 @@ load('ground_truth_2.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'danger';
+imagesFolder = 'mism';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -43,7 +43,7 @@ for k = 1 : length(theFiles)
     yellowMask = maskYellow(contrast);
     whitishMask = maskWhitish(contrast);
     gray = rgb2gray(contrast);
-    edges = edge(gray,'canny');
+    edges = edge(gray);
     
 %     figure();
 %     subplot(3,2,1);imshow(redMask);title('R');
@@ -75,7 +75,7 @@ for k = 1 : length(theFiles)
     
     %% LINES
     
-    [H,T,R] = hough(edges);
+    [H,T,R] = hough(BW);
     imshow(H,[],'XData',T,'YData',R,'InitialMagnification','fit');
     xlabel('\theta'), ylabel('\rho');
     axis on, axis normal, hold on;
@@ -84,7 +84,7 @@ for k = 1 : length(theFiles)
     x = T(P(:,2)); y = R(P(:,1));
     plot(x,y,'s','color','white');
 
-    lines = houghlines(edges,T,R,P,'FillGap',5,'MinLength',15);
+    lines = houghlines(BW,T,R,P,'FillGap',5,'MinLength',15);
 
     
     %% MASKS [SHOULD BE AS DYNAMIC AS POSSIBLE IDEALLY]
@@ -188,21 +188,7 @@ for k = 1 : length(theFiles)
     gt_index = find(strcmp({ground_truth_2.filename}, baseFileName)==1);
     gt_name = ground_truth_2(gt_index).name;
     
-    figure();imshow(original);
-    
-    hold on
-    for i = 1:length(lines)
-       xy = [lines(i).point1; lines(i).point2];
-       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
-
-       % Plot beginnings and ends of lines
-       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
-       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
-
-    end
-
-    hold off
-    
+    %figure();imshow(original);
     % Plot bright circles in blue
     %viscircles(centersBright, radiiBright,'Color','g');
     % Plot dark circles in dashed red boundaries

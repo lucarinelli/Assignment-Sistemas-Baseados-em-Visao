@@ -28,7 +28,6 @@ plot(x,y,'s','color','white');
 
 lines = houghlines(BW,T,R,P,'FillGap',5,'MinLength',15);
 figure, imshow(original), hold on
-max_len = 0;
 for k = 1:length(lines)
    xy = [lines(k).point1; lines(k).point2];
    plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
