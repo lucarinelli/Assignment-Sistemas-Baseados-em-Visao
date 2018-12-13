@@ -33,39 +33,37 @@ for k = 1 : length(theFiles)
     imagesize = size(original);
     max_x = imagesize(1)/2;
     max_y = imagesize(2)/2;
-    original1 = imcrop(original, [max_x-15 max_y-15 max_x+12 max_y+12]);
     
-     %subplot(1,2,1);imshow(original);title('norm', 'FontSize', 15);
-     %subplot(1,2,2);imshow(original1);title('crop', 'FontSize', 15);
+    origin = imadjust(original,stretchlim(original),[]);
+    resized = imresize(original,[max_x*4 max_y*4],'bilinear');
+    gray = rgb2gray(resized);
+    resized_eq = adapthisteq(gray, 'ClipLimit' ,1);    
+    bin = imbinarize(resized_eq);
+    se = [1 1 ;1 1];
+    dilate = imdilate(bin,se);
     
-    % Contrast enhancement
-    contrast = imadjust(original1, stretchlim(original1)); %%colored 
     
-    contrast2 = histeq(contrast,2);
-    sharp = imsharpen(contrast2);
     
-    con_img_gray = rgb2gray(sharp); %%gray
-    %con_img_gray = imadjust(con_img_gray, stretchlim(con_img_gray)); %increase contrast
-    bina_filt = imbinarize(histeq(con_img_gray,5),'adaptive','sensitivity',0.68); %binarization
-    subplot(1,2,1);imshow(con_img_gray);title('crop', 'FontSize', 15);
-    subplot(1,2,2);imshow(bina_filt);title('contrast', 'FontSize', 15);figure
+     figure();
+    % subplot(1,3,1);imshow(dilate);title('dilate', 'FontSize', 15);
+    % subplot(1,3,2);imshow(dilate1);title('dilate1', 'FontSize', 15);
+     subplot(1,3,3);imshow(dilate);title('dilate', 'FontSize', 15); 
     
-    bina_filt = bwmorph(bina_filt,'thicken');
+   
+   
     
-    se = strel('square',2);
-    bina_filt = imerode(bina_filt,se); %morphology adjustment
-%     bina_filt = bwmorph(bina_filt,'hbreak');
-%     bina_filt = bwmorph(bina_filt,'spur');
+%     original1 = imcrop(original, [max_x-19 max_y-17 max_x+12 max_y+12]);
+%     
+%     red = origin(:, :, 1);
+%     green = origin(:, :, 2); 
+      blue = origin(:, :, 3); 
 
-    %bina_filt = bwmorph(bina_filt,'open');
-    
-%       se = strel('square',1);
-%       bina_filt = imopen(bina_filt,se); %morphology adjustment
-%     subplot(1,2,1);imshow(bina);title('bina', 'FontSize', 15);
-%     subplot(1,2,2);imshow(bina_filt);title('bina_filt', 'FontSize', 15);figure
-    edges = edge(bina_filt, 'canny');
-%     subplot(1,2,1);imshow(edges);title('edge', 'FontSize', 15);
-%     subplot(1,2,2);imshow(bina_filt);title('bina_filt', 'FontSize', 15);figure
+     %con_img_gray = imadjust(con_img_gray, stretchlim(con_img_gray)); %increase contrast
+     %bina_filt = imbinarize(con_img_gray1,'adaptive','ForegroundPolarity','dark','Sensitivity',0.08);
+     %bina_filt = imbinarize(con_img_gray1,200);
+     %bina_filt = imbinarize(histeq(con_img_gray1,5),'adaptive','sensitivity',0.68); %binarization
+     edges = edge(bina_filt, 'canny');
+    bina_filt = bwmorph(bina_filt,'thicken');
     
  
 %     [H, T, R] = hough(bina_filt);
