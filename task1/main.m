@@ -156,7 +156,7 @@ for k = 1 : length(theFiles)
     end
     
     total_signs_true_positive = total_signs_true_positive + n_signs_matched;
-    total_signs_positive = size(signs_founded,1);
+    total_signs_positive = total_signs_positive + size(signs_founded,1);
     total_signs_truth = total_signs_truth + size(gt_rectangles,1);
     
     
