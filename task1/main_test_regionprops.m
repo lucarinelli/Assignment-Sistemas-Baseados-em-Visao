@@ -10,7 +10,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'some';
+imagesFolder = 'badrecall';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -89,9 +89,9 @@ for k = 1 : length(theFiles)
     %% REGIONPROPS STUFF
     
     %get outlines of each object
-    [B,L,N] = bwboundaries(just_blue);
+    [B,L,N] = bwboundaries(just_blue,4);
     %get stats
-    stats =  regionprops(L,'BoundingBox');
+    stats =  regionprops(L,'BoundingBox');%,'ConvexHull','Area');
     BBox = cat(1,stats.BoundingBox);
 
     hypothesis = [];
@@ -108,7 +108,24 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each object
-    [B,L,N] = bwboundaries(just_red);
+    [B,L,N] = bwboundaries(just_red,4);
+    %get stats
+    stats =  regionprops(L,'BoundingBox');
+    BBox = cat(1,stats.BoundingBox);
+    
+    for i=1:N
+        x = BBox(i,1);
+        y = BBox(i,2);
+        width = BBox(i,3);
+        height = BBox(i,4);
+        %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
+            hypothesis = [hypothesis; [y y+height x x+width]];
+        end
+    end
+    
+    %get outlines of each object
+    [B,L,N] = bwboundaries(just_whitish,4);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -180,6 +197,7 @@ for k = 1 : length(theFiles)
     partial_recall = n_signs_matched/size(gt_rectangles,1);
     
     if(partial_recall<1)
+        fprintf(1,'Bad recall! %d\n',partial_recall);
         bad_recall_names = [bad_recall_names; baseFileName];
     end
     

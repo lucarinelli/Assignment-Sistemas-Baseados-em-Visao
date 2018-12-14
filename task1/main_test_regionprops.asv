@@ -27,6 +27,8 @@ total_signs_true_positive = 0;
 total_signs_positive = 0;
 total_signs_truth = 0;
 
+bad_recall_names = {};
+
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
@@ -79,7 +81,7 @@ for k = 1 : length(theFiles)
     %figure; imshow(just_red);title('R', 'FontSize', 10); % Display image.
     %figure; imshow(just_blue);title('B', 'FontSize', 10); % Display image.
     
-    all_masks = cat(3,255*uint8(just_red),0*just_whitish,255*uint8(just_blue));
+    all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     
     
     signs_founded = [];
@@ -89,7 +91,7 @@ for k = 1 : length(theFiles)
     %get outlines of each object
     [B,L,N] = bwboundaries(just_blue);
     %get stats
-    stats =  regionprops(L,'BoundingBox');
+    stats =  regionprops(L,'BoundingBox','ConvexHull','Area');
     BBox = cat(1,stats.BoundingBox);
 
     hypothesis = [];
@@ -107,6 +109,23 @@ for k = 1 : length(theFiles)
     
     %get outlines of each object
     [B,L,N] = bwboundaries(just_red);
+    %get stats
+    stats =  regionprops(L,'BoundingBox');
+    BBox = cat(1,stats.BoundingBox);
+    
+    for i=1:N
+        x = BBox(i,1);
+        y = BBox(i,2);
+        width = BBox(i,3);
+        height = BBox(i,4);
+        %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
+            hypothesis = [hypothesis; [y y+height x x+width]];
+        end
+    end
+    
+    %get outlines of each object
+    [B,L,N] = bwboundaries(just_whitish);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -174,6 +193,13 @@ for k = 1 : length(theFiles)
     total_signs_positive = total_signs_positive + size(signs_founded,1);
     total_signs_truth = total_signs_truth + size(gt_rectangles,1);
     
+    partial_precision = n_signs_matched/size(signs_founded,1);
+    partial_recall = n_signs_matched/size(gt_rectangles,1);
+    
+    if(partial_recall<1)
+        bad_recall_names = [bad_recall_names; baseFileName];
+    end
+    
     drawnow; % Force display to update immediately.
 end
 
@@ -181,3 +207,5 @@ total_precision = total_signs_true_positive/total_signs_positive;
 total_recall = total_signs_true_positive/total_signs_truth;
 
 fprintf(1, '\n\nPRECISION: %d  RECALL: %d\n', total_precision, total_recall);
+
+bad_recall_names
