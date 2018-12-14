@@ -19,7 +19,8 @@ end
 % Get a list of all files in the folder with the desired file name pattern.
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
-
+somma = 0;
+%% analyze images 
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
@@ -27,51 +28,120 @@ for k = 1 : length(theFiles)
     
     % Now do whatever you want with this file name,
     % such as reading it in as an image array with imread()
-    
+
     
     original = imread(fullFileName);
-    imagesize = size(original);
-    max_x = imagesize(1)/2;
-    max_y = imagesize(2)/2;
     
-    origin = imadjust(original,stretchlim(original),[]);
-    resized = imresize(original,[max_x*4 max_y*4],'bilinear');
-    gray = rgb2gray(resized);
-    resized_eq = adapthisteq(gray, 'ClipLimit' ,1);    
-    bin = imbinarize(resized_eq);
-    se = [1 1 ;1 1];
-    dilate = imdilate(bin,se);
+    resized = imresize(original,[400 400],'bilinear');  %resize
+    resized2 = imsharpen(resized);
+    gray = rgb2gray(resized2);
+    gray_filt = medfilt2(gray);
     
     
-    
-     figure();
-    % subplot(1,3,1);imshow(dilate);title('dilate', 'FontSize', 15);
-    % subplot(1,3,2);imshow(dilate1);title('dilate1', 'FontSize', 15);
-     subplot(1,3,3);imshow(dilate);title('dilate', 'FontSize', 15); 
-    
-   
-   
-    
-%     original1 = imcrop(original, [max_x-19 max_y-17 max_x+12 max_y+12]);
-%     
-%     red = origin(:, :, 1);
-%     green = origin(:, :, 2); 
-      blue = origin(:, :, 3); 
+    [r c] = size(gray_filt);
+    mean = mean2(gray_filt(100:300,100:300));
+  
+ %decrease bright of brighter images by decreasing intensity------------  
+%     for m =(r/4):(3*r/4)
+%             for l=(c/4):(3*c/4)
+%         summ(m,l) = gray_filt(m,l);
+%         somma = summ(m,l)+somma;
+%             end
+%         end
 
-     %con_img_gray = imadjust(con_img_gray, stretchlim(con_img_gray)); %increase contrast
-     %bina_filt = imbinarize(con_img_gray1,'adaptive','ForegroundPolarity','dark','Sensitivity',0.08);
-     %bina_filt = imbinarize(con_img_gray1,200);
-     %bina_filt = imbinarize(histeq(con_img_gray1,5),'adaptive','sensitivity',0.68); %binarization
-     edges = edge(bina_filt, 'canny');
-    bina_filt = bwmorph(bina_filt,'thicken');
+    if mean <=40
+        %gray_filt = histeq(gray_filt,5);
+        gray_filt = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);
+        
+    end   
+    
+%     
+%     if average >50 && average<100
+%         for m=1:r
+%             for l=1:c
+%         eqi(m,l) = eqi(m,l)+19;
+%             end
+%         end
+%     end
+%---------------------------------------------------------    
     
  
-%     [H, T, R] = hough(bina_filt);
+ step1 = gray_filt;
+ 
+%     for m=1:r
+%         for l=1:c
+%         if gray_filt(m,l) >=215 && gray_filt(m,l)<=255
+%             gray_filt(m,l) = 255;
+%         else
+%             gray_filt(m,l) = gray_filt(m,l);
+%             
+%         end
+%         end
+%     end
+    
+    
+    
+    bin = imbinarize(step1);
+    resized_eq2 = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);
+    bin2 = imbinarize(resized_eq2);
+    resized_eq3 = adapthisteq(gray_filt, 'ClipLimit' ,0.01);
+    bin3 = imbinarize(resized_eq3); %binarization
+    bin4 = imbinarize(gray_filt);
+    
+    
+    
+    figure();
+    subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
+    subplot(3,3,2);imshow(bin4);title('bin4', 'FontSize', 15);
+    subplot(3,3,3);imshow(bin3);title('bin3', 'FontSize', 15);
+    subplot(3,3,4);imshow(gray);title('gray', 'FontSize', 15);
+    subplot(3,3,5);imshow(bin);title('bin step1', 'FontSize', 15);
+    subplot(3,3,6);imshow(bin2);title('bin2', 'FontSize', 15); 
+    
+    
+    
+    
+    %morphological operation---------------------------------------------
+    se=strel('square',5);
+    dilate = imdilate(bin3,se);
+    morpo = bwmorph(dilate,'spur');
+    se=strel('square',6);
+    morpo1 = imopen(morpo,se);
+    
+    %K = imcomplement (morpo1);
+%     imagesize = size(morpo1);
+%     max_x = imagesize(1)/2;
+%     max_y = imagesize(2)/2;
+%     cut = imcrop(morpo1, [max_x-max_x/2 max_y-max_y/2 max_x+8 max_y+12]);    
+    
+    %segmentation---------------------------------------------------
+    edges = edge(morpo1, 'sobel');
+%    
+%      figure();
+%      subplot(3,3,1);imshow(original);title('original', 'FontSize', 15);
+%     subplot(3,3,2);imshow(gray_filt);title('gray_filt', 'FontSize', 15);
+%      subplot(3,3,3);imshow(eqi);title('eqi', 'FontSize', 15);
+%      subplot(3,3,4);imshow(bin3);title('bin3', 'FontSize', 15);
+%      subplot(3,3,5);imshow(dilate);title('dilate', 'FontSize', 15);
+%      subplot(3,3,6);imshow(morpo);title('morpo', 'FontSize', 15); 
+%     
+   
+%     [B,L] = bwboundaries (morpo1 ,'noholes');
+%     imshow (cut);
+%     hold on
+%     for k = 1: length (B)
+%     boundary = B{k};
+%     plot ( boundary (: ,2) ,boundary (: ,1) ,'g','LineWidth' ,2) ;
+%     end    
+
+    
+ 
+%     [H, T, R] = hough(morpo1);
 %     P = houghpeaks(H,4);
-%     lines = houghlines(bina_filt,T,R,P)
-%     %edge_bin = edge(bina_filt, 'canny',);
-%     %imshow(edge_bin);figure
-%     figure, imshow(bina_filt), hold on
+%     lines = houghlines(morpo1,T,R,P);
+%     figure();
+%     imshow(morpo1);
+%     hold on
 %        max_len = 0;
 %        for k = 1:length(lines)
 %          xy = [lines(k).point1; lines(k).point2];
@@ -87,24 +157,11 @@ for k = 1 : length(theFiles)
 %            max_len = len;
 %            xy_long = xy;
 %          end
-%        end
+%         end
 %  
 %        % highlight the longest line segment
 %        plot(xy_long(:,1),xy_long(:,2),'LineWidth',2,'Color','cyan');
    
-    image_size=size(original);
-    just_red = uint8(zeros(image_size(1:2)));
-    just_blue = uint8(zeros(image_size(1:2)));
-    just_whitish = uint8(zeros(image_size(1:2)));
-    
-
-    %[A,B] = mascheraB(original);
-    %imshow(A);figure
-%     just_whitish_adj = imadjust(just_whitish,stretchlim(just_whitish));
-%     just_whitish_bin = imbinarize(just_whitish_adj);
-%     w_edge = edge(just_whitish_bin, 'canny');figure
-    %imshow(w_edge);title('white', 'FontSize', 15);
-
 
 %    %%Grountruth
 %         % draw ground truth
@@ -136,5 +193,5 @@ for k = 1 : length(theFiles)
 %     %imshowpair(bin_gray,bin,'montage')
 %     %title('Binarized (after opening) - gray vs color', 'FontSize', 15);
 %     
-%     drawnow; % Force display to update immediately.
+%    drawnow; % Force display to update immediately.
 end

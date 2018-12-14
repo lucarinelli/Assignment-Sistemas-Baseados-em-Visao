@@ -12,7 +12,7 @@ load('ground_truth_2.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'images';
+imagesFolder = 'mism';
 if ~isdir(imagesFolder) % Check to make sure that folder actually exists.  Warn user if it doesn't.
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
   uiwait(warndlg(errorMessage));
@@ -79,12 +79,10 @@ for k = 1 : length(theFiles)
     
     %% LINES
     
-    %              i1 gprio       i2 danger      i3 danger    14 gprio
     ranges_theta = {-25:-0.25:-35; -25:-0.25:-35; 25:0.25:35; 25:0.25:35};% -80:-0.50:-89.5; 80:0.5:89.5};
     ranges_rho = [-0.15 0.15; 0.2 0.6; 0.8 1; 0.3 0.6]*mean(size(gray));
     lines = []; 
     
-    l_sides = [0 0 0 0];
     for i = 1 : size(ranges_theta,1)
         [H,T,R] = hough(edges,'Theta',ranges_theta{i});
 
@@ -96,7 +94,6 @@ for k = 1 : length(theFiles)
                 if lines_temp(j).rho > ranges_rho(i,1) && lines_temp(j).rho < ranges_rho(i,2)
                     fprintf(1,'i %d rho %d\n',i,lines_temp(j).rho/mean(size(gray)));
                     lines = [lines; lines_temp(j)'];
-                    l_sides(i) = l_sides(i) + 1;
                 end
             end
         end
@@ -104,7 +101,6 @@ for k = 1 : length(theFiles)
     
     red_lines = [];
     
-    redl_sides = [0 0 0 0];
     for i = 1 : size(ranges_theta,1)
         [H,T,R] = hough(redMask,'Theta',ranges_theta{i});
 
@@ -116,7 +112,7 @@ for k = 1 : length(theFiles)
                 if i==3
                     fprintf(1,'i %d rho %d\n',i,lines_temp(j).rho/mean(size(gray)));
                     red_lines = [red_lines; lines_temp(j)'];
-                    redl_sides(i) = redl_sides(i) + 1;
+                    red_sides(i) 
                 end
             end
         end
@@ -182,8 +178,13 @@ for k = 1 : length(theFiles)
     result='unknown';
     
     %% DETECT STOP/FORBIDDEN(?) [REALLY WEAK]
-    if score_red9 > 0.55 && score_white8 > 0.19
+    if score_red9 > 0.6 && score_white8 > 0.2
         result = 'other';
+    end
+    
+    %% DETECT DANGER (Needs polygon/line recognition) [REALLY WEAK]
+    if score_red2 > 0.5 && score_red3 < 0.5
+        result = 'danger';
     end
     
     %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
@@ -194,15 +195,6 @@ for k = 1 : length(theFiles)
     %% DETECT HAVE PRIORITY
     if score_yellow10 > 0.5 && score_white11 > 0.5
         result = 'other';
-    end
-    
-    %% DETECT DANGER (Needs polygon/line recognition) [WEAK]
-    if (score_red2 > 0.5 && score_red3 < 0.5)% && score_red9 < 0.6) %&& (redl_sides(2)>0||l_sides(2)>0)||(redl_sides(3)>0||l_sides(3)>0))
-        result = 'danger';
-    end
-    
-    if (l_sides(2)>0 ||(redl_sides(2) > 0 && score_red9< 0.5))&&(l_sides(3) > 0 ||(redl_sides(3) > 0 && score_red9< 0.5))
-        result = 'danger';
     end
     
     %% DETECT MANDATORY
