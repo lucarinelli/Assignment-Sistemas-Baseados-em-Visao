@@ -10,7 +10,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'badrecall';
+imagesFolder = 'some';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -49,6 +49,10 @@ for k = 1 : length(theFiles)
     just_blue = createMaskBlue(original);
     just_whitish = createMaskWhitish(original);
     
+    all_masks_no_magic = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
+    
+    %% LET'S OBTAIN AS MANY COMPONENTS AS WE CAN, IN A REASONABLE WAY...
+    
     just_red = just_red.*not(just_whitish);
     just_blue = just_blue.*not(just_whitish);
     just_red = just_red.*not(just_blue);
@@ -58,6 +62,8 @@ for k = 1 : length(theFiles)
     just_red = just_red.*not(edges);
     just_blue = just_blue.*not(edges);
     just_whitish = just_whitish.*not(edges);
+    
+    %% FILTERING
     
     hm_i={[1 0 0; 0 1 0; 0 0 1]; [0 1 0; 0 1 0; 0 1 0]; [0 0 1; 0 1 0; 1 0 0]; [1 0 0; 0 1 0; 0 1 0];
           [0 0 1; 0 1 0; 0 1 0]; [0 1 0; 0 1 0; 1 0 0]; [0 1 0; 0 1 0; 0 0 1]; [0 0 0; 1 1 1; 0 0 0];
@@ -82,9 +88,7 @@ for k = 1 : length(theFiles)
     %figure; imshow(just_blue);title('B', 'FontSize', 10); % Display image.
     
     all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
-    
-    
-    signs_founded = [];
+    all_masks_white = cat(3,255*uint8(just_red|just_whitish),255*just_whitish,255*uint8(just_blue|just_whitish));
     
     %% REGIONPROPS STUFF
     
@@ -94,7 +98,7 @@ for k = 1 : length(theFiles)
     stats =  regionprops(L,'BoundingBox');%,'ConvexHull','Area');
     BBox = cat(1,stats.BoundingBox);
 
-    hypothesis = [];
+    hypothesisBlue = [];
     
     for i=1:N
         x = BBox(i,1);
@@ -102,8 +106,8 @@ for k = 1 : length(theFiles)
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
-            hypothesis = [hypothesis; [y y+height x x+width]];
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 10 && height >10
+            hypothesisBlue = [hypothesisBlue; [y y+height x x+width]];
         end
     end
     
@@ -113,14 +117,16 @@ for k = 1 : length(theFiles)
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
     
+    hypothesisRed = [];
+    
     for i=1:N
         x = BBox(i,1);
         y = BBox(i,2);
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
-            hypothesis = [hypothesis; [y y+height x x+width]];
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 10 && height >10
+            hypothesisRed = [hypothesisRed; [y y+height x x+width]];
         end
     end
     
@@ -130,22 +136,49 @@ for k = 1 : length(theFiles)
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
     
+    hypothesisWhite = [];
+    
     for i=1:N
         x = BBox(i,1);
         y = BBox(i,2);
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
-            hypothesis = [hypothesis; [y y+height x x+width]];
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 10 && height >10 
+            center = [x+width/2 y+height/2];
+            x = center(1) - width;
+            y = center(2) - height;
+            width = width * 2;
+            height = height * 2;
+            hypothesisWhite = [hypothesisWhite; [y y+height x x+width]];
         end
     end
     
+    %% Filtering
+    
+    signs_founded = [];
+    
+    hypothesis = [hypothesisBlue; hypothesisRed; hypothesisWhite];
+    tried=0;
+    passed = 0;
+    for i = 1 : size(hypothesis,1)
+        hyp=floor(hypothesis(i,:));
+        tried = tried +1;
+        window = all_masks_white(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        if task2func(window) == 1
+            signs_founded = [signs_founded; hyp];
+            %figure();imshow(window);
+            passed = passed +1;
+        end
+    end
+    fprintf(1,'passed %d/%d',passed,tried);
+    
     %% Print
     
-    figure();imshow(all_masks);title('Masks', 'FontSize', 15); % Display image
-    
-    signs_founded = hypothesis;
+    figure();
+    subplot(1,2,1);imshow(all_masks);title('Masks', 'FontSize', 15); % Display image
+    subplot(1,2,2);imshow(all_masks_white);title('Masks no magic', 'FontSize', 15); % Display image
+
 
     % draw what we found
     
@@ -169,6 +202,7 @@ for k = 1 : length(theFiles)
 
     %% COMPUTE STUFF FOR TOTAL SCORE
     n_signs_matched = 0;
+    already_matched = [];
     for gti = 1 : size(gt_rectangles,1)
         for i = 1 : size(signs_founded,1)
             % compute areas
@@ -183,8 +217,9 @@ for k = 1 : length(theFiles)
             areai = sum(sum(roiinter));
             areau = sum(sum(roiunion));
             jscore = areai/areau;
-            if jscore > 0.5
+            if (jscore > 0.5) && numel(find(already_matched==gti))==0
                 n_signs_matched = n_signs_matched + 1;
+                already_matched = [already_matched; gti];
             end
         end
     end
