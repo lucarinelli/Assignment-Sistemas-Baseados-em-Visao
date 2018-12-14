@@ -61,13 +61,13 @@ for k = 1 : length(theFiles)
     [centersWhitishb, radiiWhitishb] = imfindcircles(just_whitish,[Rmin Rmax],'ObjectPolarity','bright');
     %[centersEdgesHsv, radiiEdgesHsv] = imfindcircles(edge(gray_hsv),[Rmin Rmax]);
     
-%     viscircles(centersRed, radiiRed,'LineStyle','--','Color','Red');
-%     viscircles(centersBlue, radiiBlue,'LineStyle','--','Color','Blue');
-%     viscircles(centersWhitish, radiiWhitish,'LineStyle','--','Color','Green');
-%     viscircles(centersRedb, radiiRedb,'LineStyle','--','Color','Yellow');
-%     viscircles(centersBlueb, radiiBlueb,'LineStyle','--','Color','Green');
-%     viscircles(centersWhitishb, radiiWhitishb,'LineStyle','--','Color','Yellow');
-%     viscircles(centersEdgesHsv, radiiEdgesHsv,'Color','Yellow');
+    viscircles(centersRed, radiiRed,'LineStyle','--','Color','Red');
+    viscircles(centersBlue, radiiBlue,'LineStyle','--','Color','Blue');
+    viscircles(centersWhitish, radiiWhitish,'LineStyle','--','Color','Green');
+    viscircles(centersRedb, radiiRedb,'LineStyle','--','Color','Yellow');
+    viscircles(centersBlueb, radiiBlueb,'LineStyle','--','Color','Green');
+    viscircles(centersWhitishb, radiiWhitishb,'LineStyle','--','Color','Yellow');
+    viscircles(centersEdgesHsv, radiiEdgesHsv,'Color','Yellow');
     
     tollerance_centers = 10;
     tollerance_radii = 10;
@@ -110,16 +110,17 @@ for k = 1 : length(theFiles)
 %     end
 
     % draw what we found
+    
     hold on
     for i = 1 : size(signs_founded,1)
-        px = [0 1 1 0]*(signs_founded(i,4)-signs_founded(i,3)) + signs_founded(i,3);
-        py = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
-        patch(px, py,'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
+        pxd = [0 1 1 0]*(signs_founded(i,4)-signs_founded(i,3)) + signs_founded(i,3);
+        pyd = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
+        patch(pxd, pyd, 'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
     end
     
-    hold off
+    %hold off
     
-    % draw ground truth
+    draw ground truth
     hold on
     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
     gt_rectangles = ground_truth(gt_index).gt;
@@ -130,7 +131,7 @@ for k = 1 : length(theFiles)
     end
     
     hold off
-    
+
     %% COMPUTE STUFF FOR TOTAL SCORE
     n_signs_matched = 0;
     for gti = 1 : size(gt_rectangles,1)
