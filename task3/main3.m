@@ -99,6 +99,8 @@ for k = 1 : length(theFiles)
 %% find regions (REGION PROMPS)----------------------------------------------
 %figure();imshow(bin_mask);
 CC = bwconncomp(bin_mask);
+[BBB, LLL, NNN] = bwboundaries(bin_mask);
+figure();imshow(label2rgb(LLL));
 REGION = regionprops(CC,'Area','BoundingBox','Perimeter');
 step1 = bin_mask;
  for k =1:length(REGION)
@@ -107,59 +109,150 @@ step1 = bin_mask;
     start_x = data_bounding(1);
     start_y = data_bounding(2);
     lungh = data_bounding(3);
-    height = data_bounding(4);
+    alt = data_bounding(4);
+    
 %% area constraint
 if area < (16000*0.03)
-    %reduction = roipoly(bin_mask,[5 5],[5 5]);
+
 %    thisBB = REGION(k).BoundingBox;
 %    rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
 %    'EdgeColor','r','LineWidth',2 );
 
 for u = floor(start_x):floor(start_x+lungh)
-     for y = floor(start_y) : floor(start_y+height);
+     for y = floor(start_y) : floor(start_y+alt);
          bin_mask(y,u) = 0;
      end
 end
 end
 
  end;
+
  
  %% regionprops (perimeter)
- for k =1:length(REGION)
-    perimetro = REGION(k).Perimeter;
-    start_x = data_bounding(1);
-    start_y = data_bounding(2);
+
+    
+figure();imshow(bin_mask);
+CC = bwconncomp(bin_mask);
+REGION2 = regionprops(CC);
+
+    max_x =400;
+    max_y =400;
+    max_fin_x = 0;
+    max_fin_y = 0;
+    boundary_x = zeros(length(REGION2),1);
+    boundary_y = zeros(length(REGION2),1);
+    boundary_fin_x = zeros(length(REGION2),1);
+    boundary_fin_y = zeros(length(REGION2),1);
+    
+   
+for k =1:length(REGION2)
+    
+    area = REGION2(k).Area;
+    data_bounding = REGION2(k).BoundingBox;
+    start_x = floor(data_bounding(1));
+    start_y = floor(data_bounding(2));
     lungh = data_bounding(3);
-    height = data_bounding(4);
+    alt = data_bounding(4);  
     
     
-    for u = 1 : 400
-     for y = 1 : 130 
+    if start_x > 100 && start_x + lungh < 350
+        if start_y > 100 && start_y + alt < 350
+                       
+            if start_x < max_x
+                max_x = start_x;
+            end
+            if start_y < max_y
+                max_y = start_y;               
+            end
+            if (start_x + lungh) > max_fin_x 
+                max_fin_x = (start_x + lungh) ;
+            end
+            if (start_y + alt) > max_fin_y 
+                max_fin_y = (start_y + alt);
+            end
+        else 
+            boundary_x(k) = 400;
+            boundary_y(k) = 400;
+            boundary_fin_x = 0;
+            boundary_fin_y = 0;
+        end
+    end
+end
+% if (max_fin_x-max_x) > 0 && (max_fin_y-max_y) > 0
+%     rectangle('Position', [max_x,max_y,max_fin_x-max_x, max_fin_y-max_y],...
+%     'EdgeColor','r','LineWidth',2 );
+% end;
+
+%% after found the region of interest, we delete everything that is not inside it
+    for u = 1 : max_x
+     for y = 1 : 400 
          bin_mask(y,u) = 0;
      end
     end
+for u = max_fin_x+1 : 400
+     for y = 1 : 400 
+         bin_mask(y,u) = 0;
+     end
+end
 for u = 1 : 400
-     for y = 350 : 400 
+     for y = 1 : max_y 
          bin_mask(y,u) = 0;
      end
 end
-for u = 1 : 100
-     for y = 1 : 400 
+for u = 1 : 400
+     for y = 1+max_fin_y : 400 
          bin_mask(y,u) = 0;
      end
 end
-for u = 300 : 400
-     for y = 1 : 400 
-         bin_mask(y,u) = 0;
-     end
-end
+step1 = bin_mask;
+area_max = 0;
+
+CC = bwconncomp(bin_mask);
+REGION3 = regionprops(CC);
+
+for k =1:length(REGION3)
+    area = REGION3(k).Area;
+    data_bounding = REGION3(k).BoundingBox;
+    start_x = data_bounding(1);
+    start_y = data_bounding(2);
+    lungh = data_bounding(3);
+    alt = data_bounding(4);
     
- end
+    if area < 500
+    for u = floor(start_x):floor(start_x+lungh)
+     for y = floor(start_y) : floor(start_y+alt);
+         bin_mask(y,u) = 0;
+     end
+end
+    end
+end
+
+% %% regionprops Convexhull
+% CC = bwconncomp(bin_mask);
+% REGION4 = regionprops(CC, 'ConvexHull');
+% points = cat(1,REGION4.ConvexHull);
+% regionroi = roipoly(gray,points(:,1),points(:,2));
+
+
+% figure();
+% subplot(1,2,1);imshow(bin_mask);title('bin_mask');
+% subplot(1,2,2);imshow(step1);title('step1');
+    
+%     
+% drawnow;
+
+
+
+
+
+
+
+
+
  
- 
-  figure();
-  subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
-  subplot(3,3,2);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
+%   figure();
+%   subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
+%   subplot(3,3,2);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
 % subplot(3,3,3);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
 % subplot(3,3,4);imshow(dilate);title('dilate', 'FontSize', 15);
 % subplot(3,3,4);imshow(bin_mask);title('step1', 'FontSize', 15);
