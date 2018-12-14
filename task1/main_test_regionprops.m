@@ -27,6 +27,8 @@ total_signs_true_positive = 0;
 total_signs_positive = 0;
 total_signs_truth = 0;
 
+bad_recall_names = {};
+
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
@@ -43,17 +45,43 @@ for k = 1 : length(theFiles)
     %figure();imshow(original);title('Original', 'FontSize', 15); % Display image.
     
     edges = edge(gray,'canny');
-    thicken_edges = imdilate(edges,strel('disk',2));%bwmorph(edges,'thicken',2);
-    just_red = createMaskRed(original).*(not(thicken_edges));
-    just_blue = createMaskBlue(original).*(not(thicken_edges));
+    just_red = createMaskRed(original);
+    just_blue = createMaskBlue(original);
     just_whitish = createMaskWhitish(original);
+    
+    just_red = just_red.*not(just_whitish);
+    just_blue = just_blue.*not(just_whitish);
+    just_red = just_red.*not(just_blue);
+    just_blue = just_blue.*not(just_red);
+    just_whitish = just_whitish.*not(just_blue);
+    just_whitish = just_whitish.*not(just_red);
+    just_red = just_red.*not(edges);
+    just_blue = just_blue.*not(edges);
+    just_whitish = just_whitish.*not(edges);
+    
+    hm_i={[1 0 0; 0 1 0; 0 0 1]; [0 1 0; 0 1 0; 0 1 0]; [0 0 1; 0 1 0; 1 0 0]; [1 0 0; 0 1 0; 0 1 0];
+          [0 0 1; 0 1 0; 0 1 0]; [0 1 0; 0 1 0; 1 0 0]; [0 1 0; 0 1 0; 0 0 1]; [0 0 0; 1 1 1; 0 0 0];
+          [0 0 0; 1 1 0; 0 0 1]; [0 0 1; 1 1 0; 0 0 0]; [0 0 0; 0 1 1; 1 0 0]; [1 0 0; 0 1 1; 0 0 0]};
+    for asd=1:15
+        fjust_red = bwhitmiss(just_red,hm_i{1});
+        fjust_blue = bwhitmiss(just_blue,hm_i{1});
+        fjust_whitish = bwhitmiss(just_whitish,hm_i{1});
+        for lol=2:size(hm_i,1)
+            fjust_red = fjust_red|bwhitmiss(just_red,hm_i{lol});
+            fjust_blue = fjust_blue|bwhitmiss(just_blue,hm_i{lol});
+            fjust_whitish = fjust_whitish|bwhitmiss(just_whitish,hm_i{lol});
+        end
+        just_red=fjust_red;
+        just_blue=fjust_blue;
+        just_whitish=fjust_whitish;
+    end
     
     
     %figure; imshow(just_whitish);title('W', 'FontSize', 10); % Display image.
     %figure; imshow(just_red);title('R', 'FontSize', 10); % Display image.
     %figure; imshow(just_blue);title('B', 'FontSize', 10); % Display image.
     
-    all_masks = cat(3,255*uint8(just_red),edges,255*uint8(just_blue));
+    all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     
     
     signs_founded = [];
@@ -74,7 +102,7 @@ for k = 1 : length(theFiles)
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(width*0.1) && (width < 150)
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
             hypothesis = [hypothesis; [y y+height x x+width]];
         end
     end
@@ -91,7 +119,7 @@ for k = 1 : length(theFiles)
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(width*0.1) && (width < 150)
+        if abs(width-height)<abs(width*0.3) && (width < 150) && width > 8
             hypothesis = [hypothesis; [y y+height x x+width]];
         end
     end
@@ -148,6 +176,13 @@ for k = 1 : length(theFiles)
     total_signs_positive = total_signs_positive + size(signs_founded,1);
     total_signs_truth = total_signs_truth + size(gt_rectangles,1);
     
+    partial_precision = n_signs_matched/size(signs_founded,1);
+    partial_recall = n_signs_matched/size(gt_rectangles,1);
+    
+    if(partial_recall<1)
+        bad_recall_names = [bad_recall_names; baseFileName];
+    end
+    
     drawnow; % Force display to update immediately.
 end
 
@@ -155,3 +190,5 @@ total_precision = total_signs_true_positive/total_signs_positive;
 total_recall = total_signs_true_positive/total_signs_truth;
 
 fprintf(1, '\n\nPRECISION: %d  RECALL: %d\n', total_precision, total_recall);
+
+bad_recall_names
