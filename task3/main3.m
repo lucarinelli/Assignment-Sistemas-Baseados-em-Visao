@@ -36,6 +36,9 @@ for k = 1 : length(theFiles)
     resized2 = imsharpen(resized);
     gray = rgb2gray(resized2);
     gray_filt = medfilt2(gray);
+    tria_mask2 = roipoly(gray,[size(gray,2)/2 1 size(gray,2)],[1 size(gray,1) size(gray,1)]);
+    
+
     
     
     [r c] = size(gray_filt);
@@ -75,14 +78,15 @@ for k = 1 : length(theFiles)
 %     bin2 = imbinarize(resized_eq2);
     resized_eq3 = adapthisteq(gray_filt, 'ClipLimit' ,0.01);
     bin3 = imbinarize(resized_eq3); %binarization
+    bin3_compl = imcomplement(bin3);
+    bin_mask = bin3_compl.*tria_mask2;
 %     bin4 = imbinarize(gray_filt);
-    
-    
-    
-%     figure();
+  
+
+%      figure();
 %     subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
 %     subplot(3,3,2);imshow(bin4);title('bin4', 'FontSize', 15);
-%     subplot(3,3,3);imshow(bin3);title('bin3', 'FontSize', 15);
+%      subplot(3,3,3);imshow(bin3.*tria_mask2);title('bin3', 'FontSize', 15);
 %     subplot(3,3,4);imshow(gray);title('gray', 'FontSize', 15);
 %     subplot(3,3,5);imshow(bin);title('bin step1', 'FontSize', 15);
 %     subplot(3,3,6);imshow(bin2);title('bin2', 'FontSize', 15); 
@@ -90,7 +94,108 @@ for k = 1 : length(theFiles)
     
     
     
-%-----morphological operation------WE DON'T NEED--------------------------
+
+     
+%% find regions (REGION PROMPS)----------------------------------------------
+%figure();imshow(bin_mask);
+CC = bwconncomp(bin_mask);
+REGION = regionprops(CC,'Area','BoundingBox','Perimeter');
+step1 = bin_mask;
+ for k =1:length(REGION)
+    area = REGION(k).Area;
+    data_bounding = REGION(k).BoundingBox;
+    start_x = data_bounding(1);
+    start_y = data_bounding(2);
+    lungh = data_bounding(3);
+    height = data_bounding(4);
+%% area constraint
+if area < (16000*0.03)
+    %reduction = roipoly(bin_mask,[5 5],[5 5]);
+%    thisBB = REGION(k).BoundingBox;
+%    rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+%    'EdgeColor','r','LineWidth',2 );
+
+for u = floor(start_x):floor(start_x+lungh)
+     for y = floor(start_y) : floor(start_y+height);
+         bin_mask(y,u) = 0;
+     end
+end
+end
+
+ end;
+ 
+ %% regionprops (perimeter)
+ for k =1:length(REGION)
+    perimetro = REGION(k).Perimeter;
+    start_x = data_bounding(1);
+    start_y = data_bounding(2);
+    lungh = data_bounding(3);
+    height = data_bounding(4);
+    
+    
+    for u = 1 : 400
+     for y = 1 : 130 
+         bin_mask(y,u) = 0;
+     end
+    end
+for u = 1 : 400
+     for y = 350 : 400 
+         bin_mask(y,u) = 0;
+     end
+end
+for u = 1 : 100
+     for y = 1 : 400 
+         bin_mask(y,u) = 0;
+     end
+end
+for u = 300 : 400
+     for y = 1 : 400 
+         bin_mask(y,u) = 0;
+     end
+end
+    
+ end
+ 
+ 
+  figure();
+  subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
+  subplot(3,3,2);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
+% subplot(3,3,3);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
+% subplot(3,3,4);imshow(dilate);title('dilate', 'FontSize', 15);
+% subplot(3,3,4);imshow(bin_mask);title('step1', 'FontSize', 15);
+% subplot(3,3,5);imshow(bin_mask);title('step1', 'FontSize', 15);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ %% -----morphological operation------WE DON'T NEED--------------------------
 %     se=strel('square',5);
 %     eros = imerode(bin3,[0 1 1 0;0 1 1 0;0 1 1 0;0 1 1 0]);
 %     dilate = imdilate(bin3,se);
@@ -104,41 +209,59 @@ for k = 1 : length(theFiles)
 %     max_y = imagesize(2)/2;
 %     cut = imcrop(morpo1, [max_x-max_x/2 max_y-max_y/2 max_x+8 max_y+12]);    
     
-%-----segmentation---------------------------------------------------
-    edges = edge(bin3, 'canny');
-     se=strel('square',5);
-     dilate = imdilate(edges,se);
-     
-%     eros = imerode(edges,[0 1 1 0;0 1 1 0;0 1 1 0;0 1 1 0]);
-%     morpo = bwmorph(edges,'spur');
-%     se=strel('square',8);
-%     morpo1 = imopen(edges,se);
-    
-   
-     figure();
-     subplot(3,3,1);imshow(eros);title('eros', 'FontSize', 15);
-     subplot(3,3,2);imshow(gray_filt);title('gray_filt', 'FontSize', 15);
-     subplot(3,3,3);imshow(morpo);title('morpo', 'FontSize', 15);
-     subplot(3,3,4);imshow(edges);title('edges', 'FontSize', 15);
-     subplot(3,3,5);imshow(dilate);title('dilate', 'FontSize', 15);
-     subplot(3,3,6);imshow(morpo1);title('morpo1', 'FontSize', 15); 
-%     
-   
-%     [B,L] = bwboundaries (morpo1 ,'noholes');
-%     imshow (cut);
-%     hold on
-%     for k = 1: length (B)
-%     boundary = B{k};
-%     plot ( boundary (: ,2) ,boundary (: ,1) ,'g','LineWidth' ,2) ;
-%     end    
+%% -----segmentation-------------WE DON'T NEED THIS-----------------------------
+%     edges = edge(bin_mask, 'canny');
+%      se=strel('square',5);
+%      dilate = imdilate(edges,se);
 
-    
+ %% new regionprops boundary
+%figure();imshow(bin_mask);
+% edges = edge(bin_mask, 'canny');
+% bin_mask = imbinarize(bin_mask);
+% sub_bin_mask = imsubtract(bin_mask,edges);
+% se=strel('square',5);
+% bin_mask = imerode(sub_bin_mask,se);
+% 
+% CC = bwconncomp(bin_mask);
+% REGION = regionprops(CC);
+% step1 = bin_mask;
+% % 
+%  for k =1:length(REGION)
+%     area = REGION(k).Area;
+%     data_bounding = REGION(k).BoundingBox;
+%     start_x = data_bounding(1);
+%     start_y = data_bounding(2);
+%     lungh = data_bounding(3);
+%     height = data_bounding(4);
+%      if area < (16000*0.03)
+% for u = floor(start_x):floor(start_x+lungh)
+%      for y = floor(start_y) : floor(start_y+height);
+%          bin_mask(y,u) = 0;
+%      end
+% end
+% end
+% %  thisBB = REGION(k).BoundingBox;
+% %   rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+% %   'EdgeColor','r','LineWidth',2 );
+%  end
+%  
  
-%     [H, T, R] = hough(morpo1);
+% figure, imshow(bin_mask);
+% if 
+%  rectangle('Position',[REGION.BoundingBox(1),REGION.BoundingBox(2),REGION.BoundingBox(3),st.BoundingBox(4)],...
+% 'EdgeColor','r','LineWidth',2 );
+
+
+
+
+
+
+%% find lines with Hough transfomation
+%     [H, T, R] = hough(dilate);
 %     P = houghpeaks(H,4);
-%     lines = houghlines(morpo1,T,R,P);
+%     lines = houghlines(dilate,T,R,P);
 %     figure();
-%     imshow(morpo1);
+%     imshow(dilate);
 %     hold on
 %        max_len = 0;
 %        for k = 1:length(lines)
@@ -149,18 +272,18 @@ for k = 1 : length(theFiles)
 %          plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
 %          plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
 %  
-%          % determine the endpoints of the longest line segment 
-%          len = norm(lines(k).point1 - lines(k).point2);
-%          if ( len > max_len)
-%            max_len = len;
-%            xy_long = xy;
-%          end
+% %          determine the endpoints of the longest line segment 
+% %          len = norm(lines(k).point1 - lines(k).point2);
+% %          if ( len > max_len)
+% %            max_len = len;
+% %            xy_long = xy;
+% %          end
 %         end
-%  
+ 
 %        % highlight the longest line segment
 %        plot(xy_long(:,1),xy_long(:,2),'LineWidth',2,'Color','cyan');
    
-
+%% groundtruth
 %    %%Grountruth
 %         % draw ground truth
 %     hold on
@@ -192,4 +315,4 @@ for k = 1 : length(theFiles)
 %     %title('Binarized (after opening) - gray vs color', 'FontSize', 15);
 %     
 %    drawnow; % Force display to update immediately.
-end
+ end
