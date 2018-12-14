@@ -40,19 +40,10 @@ for k = 1 : length(theFiles)
     
     [r c] = size(gray_filt);
     mean = mean2(gray_filt(100:300,100:300));
-  
- %decrease bright of brighter images by decreasing intensity------------  
-%     for m =(r/4):(3*r/4)
-%             for l=(c/4):(3*c/4)
-%         summ(m,l) = gray_filt(m,l);
-%         somma = summ(m,l)+somma;
-%             end
-%         end
-
+ 
+    %if the image is too dark, it increases contrast  
     if mean <=40
-        %gray_filt = histeq(gray_filt,5);
-        gray_filt = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);
-        
+        gray_filt = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);     
     end   
     
 %     
@@ -68,62 +59,69 @@ for k = 1 : length(theFiles)
  
  step1 = gray_filt;
  
-%     for m=1:r
-%         for l=1:c
-%         if gray_filt(m,l) >=215 && gray_filt(m,l)<=255
-%             gray_filt(m,l) = 255;
-%         else
-%             gray_filt(m,l) = gray_filt(m,l);
-%             
-%         end
-%         end
-%     end
-    
-    
-    
-    bin = imbinarize(step1);
-    resized_eq2 = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);
-    bin2 = imbinarize(resized_eq2);
+    for m=1:r
+        for l=1:c
+        if gray_filt(m,l) >=215 && gray_filt(m,l)<=255
+            gray_filt(m,l) = 255;
+        else
+            gray_filt(m,l) = gray_filt(m,l);
+            
+        end
+        end
+    end
+ 
+%     bin = imbinarize(step1);
+%     resized_eq2 = adapthisteq(gray_filt, 'ClipLimit' ,0.01,'NumTiles',[4 4]);
+%     bin2 = imbinarize(resized_eq2);
     resized_eq3 = adapthisteq(gray_filt, 'ClipLimit' ,0.01);
     bin3 = imbinarize(resized_eq3); %binarization
-    bin4 = imbinarize(gray_filt);
+%     bin4 = imbinarize(gray_filt);
     
     
     
-    figure();
-    subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
-    subplot(3,3,2);imshow(bin4);title('bin4', 'FontSize', 15);
-    subplot(3,3,3);imshow(bin3);title('bin3', 'FontSize', 15);
-    subplot(3,3,4);imshow(gray);title('gray', 'FontSize', 15);
-    subplot(3,3,5);imshow(bin);title('bin step1', 'FontSize', 15);
-    subplot(3,3,6);imshow(bin2);title('bin2', 'FontSize', 15); 
+%     figure();
+%     subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
+%     subplot(3,3,2);imshow(bin4);title('bin4', 'FontSize', 15);
+%     subplot(3,3,3);imshow(bin3);title('bin3', 'FontSize', 15);
+%     subplot(3,3,4);imshow(gray);title('gray', 'FontSize', 15);
+%     subplot(3,3,5);imshow(bin);title('bin step1', 'FontSize', 15);
+%     subplot(3,3,6);imshow(bin2);title('bin2', 'FontSize', 15); 
     
     
     
     
-    %morphological operation---------------------------------------------
-    se=strel('square',5);
-    dilate = imdilate(bin3,se);
-    morpo = bwmorph(dilate,'spur');
-    se=strel('square',6);
-    morpo1 = imopen(morpo,se);
-    
-    %K = imcomplement (morpo1);
+%-----morphological operation------WE DON'T NEED--------------------------
+%     se=strel('square',5);
+%     eros = imerode(bin3,[0 1 1 0;0 1 1 0;0 1 1 0;0 1 1 0]);
+%     dilate = imdilate(bin3,se);
+%     morpo = bwmorph(dilate,'spur');
+%     se=strel('square',12);
+%     morpo1 = imopen(morpo,se);
+ 
+%     K = imcomplement (morpo1);
 %     imagesize = size(morpo1);
 %     max_x = imagesize(1)/2;
 %     max_y = imagesize(2)/2;
 %     cut = imcrop(morpo1, [max_x-max_x/2 max_y-max_y/2 max_x+8 max_y+12]);    
     
-    %segmentation---------------------------------------------------
-    edges = edge(morpo1, 'sobel');
-%    
-%      figure();
-%      subplot(3,3,1);imshow(original);title('original', 'FontSize', 15);
-%     subplot(3,3,2);imshow(gray_filt);title('gray_filt', 'FontSize', 15);
-%      subplot(3,3,3);imshow(eqi);title('eqi', 'FontSize', 15);
-%      subplot(3,3,4);imshow(bin3);title('bin3', 'FontSize', 15);
-%      subplot(3,3,5);imshow(dilate);title('dilate', 'FontSize', 15);
-%      subplot(3,3,6);imshow(morpo);title('morpo', 'FontSize', 15); 
+%-----segmentation---------------------------------------------------
+    edges = edge(bin3, 'canny');
+     se=strel('square',5);
+     dilate = imdilate(edges,se);
+     
+%     eros = imerode(edges,[0 1 1 0;0 1 1 0;0 1 1 0;0 1 1 0]);
+%     morpo = bwmorph(edges,'spur');
+%     se=strel('square',8);
+%     morpo1 = imopen(edges,se);
+    
+   
+     figure();
+     subplot(3,3,1);imshow(eros);title('eros', 'FontSize', 15);
+     subplot(3,3,2);imshow(gray_filt);title('gray_filt', 'FontSize', 15);
+     subplot(3,3,3);imshow(morpo);title('morpo', 'FontSize', 15);
+     subplot(3,3,4);imshow(edges);title('edges', 'FontSize', 15);
+     subplot(3,3,5);imshow(dilate);title('dilate', 'FontSize', 15);
+     subplot(3,3,6);imshow(morpo1);title('morpo1', 'FontSize', 15); 
 %     
    
 %     [B,L] = bwboundaries (morpo1 ,'noholes');
