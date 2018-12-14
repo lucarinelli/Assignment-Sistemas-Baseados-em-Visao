@@ -10,7 +10,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'easy';
+imagesFolder = 'some';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -38,7 +38,7 @@ for k = 1 : length(theFiles)
     
     gray_hsv = rgb2gray(original_hsv);
     
-    figure();imshow(original);title('Original', 'FontSize', 15); % Display image.
+    %figure();imshow(original);title('Original', 'FontSize', 15); % Display image.
     
     just_red = createMaskRed(original);
     just_blue = createMaskBlue(original);
@@ -49,65 +49,53 @@ for k = 1 : length(theFiles)
     %figure; imshow(just_blue);title('B', 'FontSize', 10); % Display image.
     
     all_masks = cat(3,255*uint8(just_red|just_whitish),just_whitish*255,255*uint8(just_blue|just_whitish));
-    figure();imshow(all_masks);title('Masks', 'FontSize', 15); % Display image
     
-    Rmin = 10;
-    Rmax = 40;
-    [centersRed, radiiRed] = imfindcircles(just_red,[Rmin Rmax],'ObjectPolarity','dark');
-    %[centersBlue, radiiBlue] = imfindcircles(just_blue,[Rmin Rmax],'ObjectPolarity','dark');
-    [centersWhitish, radiiWhitish] = imfindcircles(just_whitish,[Rmin Rmax],'ObjectPolarity','dark');
-    [centersRedb, radiiRedb] = imfindcircles(just_red,[Rmin Rmax],'ObjectPolarity','bright');
-    %[centersBlueb, radiiBlueb] = imfindcircles(just_blue,[Rmin Rmax],'ObjectPolarity','dark');
-    [centersWhitishb, radiiWhitishb] = imfindcircles(just_whitish,[Rmin Rmax],'ObjectPolarity','bright');
-    %[centersEdgesHsv, radiiEdgesHsv] = imfindcircles(edge(gray_hsv),[Rmin Rmax]);
     
-    viscircles(centersRed, radiiRed,'LineStyle','--','Color','Red');
-    viscircles(centersBlue, radiiBlue,'LineStyle','--','Color','Blue');
-    viscircles(centersWhitish, radiiWhitish,'LineStyle','--','Color','Green');
-    viscircles(centersRedb, radiiRedb,'LineStyle','--','Color','Yellow');
-    viscircles(centersBlueb, radiiBlueb,'LineStyle','--','Color','Green');
-    viscircles(centersWhitishb, radiiWhitishb,'LineStyle','--','Color','Yellow');
-    viscircles(centersEdgesHsv, radiiEdgesHsv,'Color','Yellow');
-    
-    tollerance_centers = 10;
-    tollerance_radii = 10;
     signs_founded = [];
-    for i=1:size(centersRed)
-        for j=1:size(centersRedb)
-            if abs(centersRed(i,:)-centersRedb(j,:))<tollerance_centers
-                for l=1:size(centersWhitish)
-                    if abs(centersRed(i,:)-centersWhitish(l,:))<tollerance_centers
-                        for m=1:size(centersWhitishb)
-                            if abs(centersWhitish(l,:)-centersWhitishb(m,:))<tollerance_centers
-                                if abs(radiiRed(i)-radiiRedb(j))<tollerance_radii && abs(radiiRed(i)-radiiWhitish(l))<tollerance_radii && abs(radiiWhitish(l)-radiiWhitishb(m))<tollerance_radii
-                                    avg_center = (centersRed(i,:)+centersRedb(j,:)+centersWhitish(l,:)+centersWhitishb(m,:))/4;
-                                    avg_radii = radiiRedb(i);
-                                    signs_founded = [signs_founded; [avg_center(2)-avg_radii avg_center(2)+avg_radii avg_center(1)-avg_radii avg_center(1)+avg_radii]];
-                                end     
-                            end
-                        end
-                    end
-                end
-            end
+    
+    %% REGIONPROPS STUFF
+    
+    %get outlines of each object
+    [B,L,N] = bwboundaries(just_blue);
+    %get stats
+    stats =  regionprops(L,'BoundingBox');
+    BBox = cat(1,stats.BoundingBox);
+
+    hypothesis = [];
+    
+    for i=1:N
+        x = BBox(i,1);
+        y = BBox(i,2);
+        width = BBox(i,3);
+        height = BBox(i,4);
+        %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
+        if abs(width-height)<abs(width*0.1) && (width < 150)
+            hypothesis = [hypothesis; [y y+height x x+widt]];
         end
     end
     
+    %get outlines of each object
+    [B,L,N] = bwboundaries(just_red);
+    %get stats
+    stats =  regionprops(L,'BoundingBox');
+    BBox = cat(1,stats.BoundingBox);
     
-%     for i=1:size(centersBlue)
-%         for j=1:size(centersRedb)
-%             if abs(centersRed(i,:)-centersRedb(j,:))<tollerance_centers
-%                 for l=1:size(centersWhitish)
-%                     if abs(centersRed(i,:)-centersWhitish(l,:))<tollerance_centers
-%                         if abs(radiiRed(i)-radiiRedb(j))<tollerance_radii && abs(radiiRed(i)-radiiWhitish(l))<tollerance_radii && abs(radiiWhitish(l)-radiiWhitishb(m))<tollerance_radii
-%                             avg_center = (centersRed(i,:)+centersRedb(j,:)+centersWhitish(l,:)+centersWhitishb(m,:))/4;
-%                             avg_radii = radiiRed(i);
-%                             signs_founded = [signs_founded; [avg_center(2)-avg_radii avg_center(2)+avg_radii avg_center(1)-avg_radii avg_center(1)+avg_radii]];
-%                         end     
-%                     end
-%                 end
-%             end
-%         end
-%     end
+    for i=1:N
+       rx = [0 1 1 0]*(BBox(i,4)-BBox(i,3)) + BBox(i,3);
+       ry = [0 0 1 1]*(BBox(i,2)-BBox(i,1)) + BBox(i,1);
+       width = (BBox(i,4)-BBox(i,3));
+       height = (BBox(i,2)-BBox(i,1));
+       %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
+       if abs(width-height)<abs(width*0.1) && (width < 150)
+           hypothesis = [hypothesis; BBox(i,:)];
+       end
+    end
+    
+    %% Print
+    
+    figure();imshow(all_masks);title('Masks', 'FontSize', 15); % Display image
+    
+    signs_founded = hypothesis
 
     % draw what we found
     
@@ -118,10 +106,7 @@ for k = 1 : length(theFiles)
         patch(pxd, pyd, 'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
     end
     
-    %hold off
-    
     %draw ground truth
-    hold on
     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
     gt_rectangles = ground_truth(gt_index).gt;
     for gti = 1 : size(gt_rectangles,1)
@@ -143,8 +128,6 @@ for k = 1 : length(theFiles)
             pysf = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
             roigt = roipoly(gray_hsv,pxgt,pygt);
             roisf = roipoly(gray_hsv,pxsf,pysf);
-            figure();imshow(roigt*255);
-            figure();imshow(roisf*255);
             roiunion = roigt|roisf;
             roiinter = roigt&roisf;
             areai = sum(sum(roiinter));
@@ -160,7 +143,7 @@ for k = 1 : length(theFiles)
     total_signs_positive = total_signs_positive + size(signs_founded,1);
     total_signs_truth = total_signs_truth + size(gt_rectangles,1);
     
-    
+    drawnow; % Force display to update immediately.
 end
 
 total_precision = total_signs_true_positive/total_signs_positive;
