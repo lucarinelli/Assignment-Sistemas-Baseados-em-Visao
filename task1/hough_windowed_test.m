@@ -1,7 +1,7 @@
 close all
 clear all
 
-original = imread('images/test.png');
+original = imread('some\77_1.png');
 
 figure();
 imshow(original);
@@ -20,17 +20,23 @@ imshow(edge_red);
 
 lines=[];
 
-for j=0:16 % slide horizontaly
-    for i=0:9 % slide vertically
-        [H,T,R] = hough(thin_red((i*80+1):((i+2)*80-1), (j*80+1):((j+2)*80-1)));
-        P  = houghpeaks(H,25,'threshold',ceil(0.8*max(H(:))));
-        lines_temp = houghlines(thin_red,T,R,P,'FillGap',5,'MinLength',15);
-        lines=[lines;lines_temp'];
+for j=0:15 % slide horizontaly
+    for i=0:8 % slide vertically
+        window = edge_red((i*80+1):((i+2)*80), (j*80+1):((j+2)*80));
+        st=strel('disk', 3);
+        window = imdilate(bwareaopen(window, 5), st);
+            theta={-20:-0.5:-65; -85:-0.5:-90; 85:0.5:90; 20:0.5:65}; 
+        for g=1:4
+            [H,T,R] = hough(window, 'Theta', theta{g,:});
+            figure();imshow(window);
+            P  = houghpeaks(H,25,'threshold',ceil(0.8*max(H(:))));
+            lines_temp = houghlines(thin_red,T,R,P,'FillGap',5,'MinLength',15);
+            lines=[lines;lines_temp'];
+        end
     end
 end
 
-figure, imshow(thin_red), hold on
-max_len = 1500;
+figure, imshow(edge_red), hold on
 for k = 1:length(lines)
    xy = [lines(k).point1; lines(k).point2];
    plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
@@ -41,8 +47,4 @@ for k = 1:length(lines)
 
    % Determine the endpoints of the longest line segment
    len = norm(lines(k).point1 - lines(k).point2);
-   if ( len > max_len)
-      max_len = len;
-      xy_long = xy;
-   end
 end

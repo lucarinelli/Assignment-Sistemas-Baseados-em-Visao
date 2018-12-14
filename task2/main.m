@@ -186,11 +186,6 @@ for k = 1 : length(theFiles)
         result = 'other';
     end
     
-    %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
-    if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2
-        result = 'other';
-    end
-    
     %% DETECT HAVE PRIORITY
     if score_yellow10 > 0.5 && score_white11 > 0.5
         result = 'other';
@@ -203,6 +198,15 @@ for k = 1 : length(theFiles)
     
     if (l_sides(2)>0 ||(redl_sides(2) > 0 && score_red9< 0.5))&&(l_sides(3) > 0 ||(redl_sides(3) > 0 && score_red9< 0.5))
         result = 'danger';
+    end
+    
+    %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
+    if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 && strcmp(result,'danger')~=1
+        result = 'other';
+    end
+    
+    if (l_sides(1)>0 ||(redl_sides(1) > 0 && score_red9< 0.5))&&(l_sides(4) > 0 ||(redl_sides(4) > 0 && score_red9< 0.5))
+        result = 'other';
     end
     
     %% DETECT MANDATORY
@@ -228,30 +232,30 @@ for k = 1 : length(theFiles)
     gt_index = find(strcmp({ground_truth_2.filename}, baseFileName)==1);
     gt_name = ground_truth_2(gt_index).name;
     
-    figure();imshow(original);
-    
-    hold on
-    for i = 1:length(lines)
-       xy = [lines(i).point1; lines(i).point2];
-       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
-
-       % Plot beginnings and ends of lines
-       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
-       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
-
-    end
-    
-    for i = 1:length(red_lines)
-       xy = [red_lines(i).point1; red_lines(i).point2];
-       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
-
-       % Plot beginnings and ends of lines
-       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
-       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
-
-    end
-
-    hold off
+%     figure();imshow(original);
+%     
+%     hold on
+%     for i = 1:length(lines)
+%        xy = [lines(i).point1; lines(i).point2];
+%        plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
+% 
+%        % Plot beginnings and ends of lines
+%        plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+%        plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+% 
+%     end
+%     
+%     for i = 1:length(red_lines)
+%        xy = [red_lines(i).point1; red_lines(i).point2];
+%        plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
+% 
+%        % Plot beginnings and ends of lines
+%        plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+%        plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+% 
+%     end
+% 
+%     hold off
     
     % Plot bright circles in blue
     %viscircles(centersBright, radiiBright,'Color','g');

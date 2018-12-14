@@ -1,7 +1,7 @@
 close all
 clear all
 
-original = imread('hard/o36.png');
+original = imread('some/d3.png');
 
 figure();
 imshow(original);
@@ -26,7 +26,7 @@ P  = houghpeaks(H,8,'threshold',ceil(0.3*max(H(:))));
 x = T(P(:,2)); y = R(P(:,1));
 plot(x,y,'s','color','white');
 
-lines = houghlines(BW,T,R,P,'FillGap',5,'MinLength',15);
+lines = houghlines(BW,T,R,P,'FillGap',5,'MinLength',15)
 figure, imshow(original), hold on
 for k = 1:length(lines)
    xy = [lines(k).point1; lines(k).point2];
