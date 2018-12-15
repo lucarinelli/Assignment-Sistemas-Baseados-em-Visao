@@ -1,4 +1,4 @@
-function [BW,maskedRGBImage] = createMaskBlue(RGB)
+function [BW] = createMaskBlue(RGB)
 %createMask  Threshold RGB image using auto-generated code from colorThresholder app.
 %  [BW,MASKEDRGBIMAGE] = createMask(RGB) thresholds image RGB using
 %  auto-generated code from the colorThresholder app. The colorspace and
@@ -22,7 +22,7 @@ channel2Min = 0.220;
 channel2Max = 1.000;
 
 % Define thresholds for channel 3 based on histogram settings
-channel3Min = 0.197;
+channel3Min = 0;%0.197;
 channel3Max = 1.000;
 
 % Create mask based on chosen histogram thresholds
@@ -30,11 +30,5 @@ sliderBW = (I(:,:,1) >= channel1Min ) & (I(:,:,1) <= channel1Max) & ...
     (I(:,:,2) >= channel2Min ) & (I(:,:,2) <= channel2Max) & ...
     (I(:,:,3) >= channel3Min ) & (I(:,:,3) <= channel3Max);
 BW = sliderBW;
-
-% Initialize output masked image based on input image.
-maskedRGBImage = RGB;
-
-% Set background pixels where BW is false to zero.
-maskedRGBImage(repmat(~BW,[1 1 3])) = 0;
 
 end
