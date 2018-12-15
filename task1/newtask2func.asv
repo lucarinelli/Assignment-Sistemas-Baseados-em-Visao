@@ -152,7 +152,6 @@ diam_mask11 = roipoly(redMask,[window_size(2)/2 1 window_size(2)/2 window_size(2
 %% SCORING 
 
 score_blue1 = sum(sum(circ_mask1.*blueMask))/area_mask1;
-score_red1 = sum(sum(circ_mask1.*redMask))/area_mask1;
 score_white1 = sum(sum(circ_mask1.*whitishMask))/area_mask1;
 
 score_red2 = sum(sum(tria_mask2.*redMask))/sum(sum(tria_mask2));
@@ -177,8 +176,8 @@ score_white11 = sum(sum(diam_mask11.*whitishMask))/sum(sum(diam_mask11));
 %% DETECTION    
 result='unknown';
 
-%% DETECT STOP/FORBIDDEN(?) [WEAK]
-if score_red9 > 0.6 && score_white8 > 0.1 && score_red1 > 0.5 && score_white1 < 0.4
+%% DETECT STOP/FORBIDDEN(?) [REALLY WEAK]
+if score_red9 > 0.6 && score_white8 > 0.2 score_red1 > 0.7
     result = 'stop/forbidden';
 end
 

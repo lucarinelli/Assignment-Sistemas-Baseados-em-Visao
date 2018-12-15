@@ -3,11 +3,11 @@ clear all
 close all
 clc
 
-%% load ground truth
+%% load ground truth-------------------------------------------------------
 
 load('ground_truth_3.mat')
 
-%% load all the images
+%% load all the images-----------------------------------------------------
 % Specify the folder where the images are
 imagesFolder = 'danger';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
@@ -19,7 +19,8 @@ end
 % Get a list of all files in the folder with the desired file name pattern.
 filePattern = fullfile(imagesFolder, '*.png');
 theFiles = dir(filePattern);
-
+somma = 0;
+%% analyze images---------------------------------------------------------- 
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
     fullFileName = fullfile(imagesFolder, baseFileName);
@@ -27,51 +28,164 @@ for k = 1 : length(theFiles)
     
     % Now do whatever you want with this file name,
     % such as reading it in as an image array with imread()
-    
-    
-    original = imread(fullFileName);
-    imagesize = size(original);
-    max_x = 
-    max_y = imagesize[]
-    %a = imagesize[max(,,1];
-    %original1 = imcrop(original, [imagesize.1/2 imagesize.2/2 30 30]);
-%     subplot(1,2,1);imshow(original);title('norm', 'FontSize', 15);
-%     subplot(1,2,2);imshow(original1);title('crop', 'FontSize', 15);figure
-    
-    % Contrast enhancement
-    contrast = imadjust(original, stretchlim(original)); %%colored 
-    
-    contrast2 = histeq(contrast,5);
-    %imshow(contrast2); figure;
-    con_img_gray = rgb2gray(contrast2); %%gray
-    con_img_gray = imadjust(con_img_gray, stretchlim(con_img_gray)); %increase contrast
-    bina_filt = imbinarize(histeq(con_img_gray,5),'adaptive','sensitivity',0.68); %binarization
 
-    
-    bina_filt = bwmorph(bina_filt,'thicken');
-    
-    se = strel('square',2);
-    bina_filt = imerode(bina_filt,se); %morphology adjustment
-%     bina_filt = bwmorph(bina_filt,'hbreak');
-%     bina_filt = bwmorph(bina_filt,'spur');
-
-    %bina_filt = bwmorph(bina_filt,'open');
-    
-%       se = strel('square',1);
-%       bina_filt = imopen(bina_filt,se); %morphology adjustment
-%     subplot(1,2,1);imshow(bina);title('bina', 'FontSize', 15);
-%     subplot(1,2,2);imshow(bina_filt);title('bina_filt', 'FontSize', 15);figure
-    edges = edge(bina_filt, 'canny');
-%     subplot(1,2,1);imshow(edges);title('edge', 'FontSize', 15);
-%     subplot(1,2,2);imshow(bina_filt);title('bina_filt', 'FontSize', 15);figure
-    
+%% Preprocessing-----------------------------------------------------------   
+    original = imread(fullFileName);   
+    resized = imresize(original,[400 400],'bilinear');  %resize
+    bin_mask = Preprocessing(resized);
+     
+%% find regions (REGION PROMPS)--------------------------------------------
+ smallestArea = 16000*0.03;
+ bin_mask = AreaConstraint(bin_mask,smallestArea);
  
-%     [H, T, R] = hough(bina_filt);
+%% regionprops define rectangle of interest--------------------------------
+  bin_mask = DefineCentralRegion(bin_mask);
+  
+%% again area contraint----------------------------------------------------
+step1 = bin_mask;
+minArea = 700;
+bin_mask = AreaConstraint(bin_mask,minArea);
+% figure();
+%     subplot(1,2,1);imshow(bin_mask);title('bin_mask');
+%     subplot(1,2,2);imshow(step1);title('step1');
+
+%% starting classification-------------------------------------------------
+% figure();imshow(bin_mask);
+CC1 = bwconncomp(bin_mask);
+classification = regionprops(CC1,'BoundingBox', 'centroid','area','Eccentricity');
+for qq=1: length(classification)
+    thisBB = classification(qq).BoundingBox;
+%    rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+%    'EdgeColor','r','LineWidth',2 );
+     cerchio(qq) = classification.Eccentricity;
+    if cerchio(qq) > 0.6
+        n_cerchi = n_cerchi+1;
+    end
+    
+end
+n_cerchi;
+
+
+
+    
+%     
+% drawnow;
+
+
+
+
+
+
+
+
+
+ 
+%   figure();
+%   subplot(3,3,1);imshow(step1);title('step1', 'FontSize', 15);
+%   subplot(3,3,2);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
+% subplot(3,3,3);imshow(bin_mask);title('bin_mask', 'FontSize', 15);
+% subplot(3,3,4);imshow(dilate);title('dilate', 'FontSize', 15);
+% subplot(3,3,4);imshow(bin_mask);title('step1', 'FontSize', 15);
+% subplot(3,3,5);imshow(bin_mask);title('step1', 'FontSize', 15);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ %% -----morphological operation------WE DON'T NEED--------------------------
+%     se=strel('square',5);
+%     eros = imerode(bin3,[0 1 1 0;0 1 1 0;0 1 1 0;0 1 1 0]);
+%     dilate = imdilate(bin3,se);
+%     morpo = bwmorph(dilate,'spur');
+%     se=strel('square',12);
+%     morpo1 = imopen(morpo,se);
+ 
+%     K = imcomplement (morpo1);
+%     imagesize = size(morpo1);
+%     max_x = imagesize(1)/2;
+%     max_y = imagesize(2)/2;
+%     cut = imcrop(morpo1, [max_x-max_x/2 max_y-max_y/2 max_x+8 max_y+12]);    
+    
+%% -----segmentation-------------WE DON'T NEED THIS-----------------------------
+%     edges = edge(bin_mask, 'canny');
+%      se=strel('square',5);
+%      dilate = imdilate(edges,se);
+
+ %% new regionprops boundary
+%figure();imshow(bin_mask);
+% edges = edge(bin_mask, 'canny');
+% bin_mask = imbinarize(bin_mask);
+% sub_bin_mask = imsubtract(bin_mask,edges);
+% se=strel('square',5);
+% bin_mask = imerode(sub_bin_mask,se);
+% 
+% CC = bwconncomp(bin_mask);
+% REGION = regionprops(CC);
+% step1 = bin_mask;
+% % 
+%  for k =1:length(REGION)
+%     area = REGION(k).Area;
+%     data_bounding = REGION(k).BoundingBox;
+%     start_x = data_bounding(1);
+%     start_y = data_bounding(2);
+%     lungh = data_bounding(3);
+%     height = data_bounding(4);
+%      if area < (16000*0.03)
+% for u = floor(start_x):floor(start_x+lungh)
+%      for y = floor(start_y) : floor(start_y+height);
+%          bin_mask(y,u) = 0;
+%      end
+% end
+% end
+% %  thisBB = REGION(k).BoundingBox;
+% %   rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+% %   'EdgeColor','r','LineWidth',2 );
+%  end
+%  
+ 
+% figure, imshow(bin_mask);
+% if 
+%  rectangle('Position',[REGION.BoundingBox(1),REGION.BoundingBox(2),REGION.BoundingBox(3),st.BoundingBox(4)],...
+% 'EdgeColor','r','LineWidth',2 );
+
+
+
+
+
+
+%% find lines with Hough transfomation
+%     [H, T, R] = hough(dilate);
 %     P = houghpeaks(H,4);
-%     lines = houghlines(bina_filt,T,R,P)
-%     %edge_bin = edge(bina_filt, 'canny',);
-%     %imshow(edge_bin);figure
-%     figure, imshow(bina_filt), hold on
+%     lines = houghlines(dilate,T,R,P);
+%     figure();
+%     imshow(dilate);
+%     hold on
 %        max_len = 0;
 %        for k = 1:length(lines)
 %          xy = [lines(k).point1; lines(k).point2];
@@ -81,31 +195,18 @@ for k = 1 : length(theFiles)
 %          plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
 %          plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
 %  
-%          % determine the endpoints of the longest line segment 
-%          len = norm(lines(k).point1 - lines(k).point2);
-%          if ( len > max_len)
-%            max_len = len;
-%            xy_long = xy;
-%          end
-%        end
-%  
+% %          determine the endpoints of the longest line segment 
+% %          len = norm(lines(k).point1 - lines(k).point2);
+% %          if ( len > max_len)
+% %            max_len = len;
+% %            xy_long = xy;
+% %          end
+%         end
+ 
 %        % highlight the longest line segment
 %        plot(xy_long(:,1),xy_long(:,2),'LineWidth',2,'Color','cyan');
    
-    image_size=size(original);
-    just_red = uint8(zeros(image_size(1:2)));
-    just_blue = uint8(zeros(image_size(1:2)));
-    just_whitish = uint8(zeros(image_size(1:2)));
-    
-
-    %[A,B] = mascheraB(original);
-    %imshow(A);figure
-%     just_whitish_adj = imadjust(just_whitish,stretchlim(just_whitish));
-%     just_whitish_bin = imbinarize(just_whitish_adj);
-%     w_edge = edge(just_whitish_bin, 'canny');figure
-    %imshow(w_edge);title('white', 'FontSize', 15);
-
-
+%% groundtruth
 %    %%Grountruth
 %         % draw ground truth
 %     hold on
@@ -136,5 +237,5 @@ for k = 1 : length(theFiles)
 %     %imshowpair(bin_gray,bin,'montage')
 %     %title('Binarized (after opening) - gray vs color', 'FontSize', 15);
 %     
-%     drawnow; % Force display to update immediately.
-end
+%    drawnow; % Force display to update immediately.
+ end

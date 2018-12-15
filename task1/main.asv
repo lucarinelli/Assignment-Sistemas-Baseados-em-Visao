@@ -13,7 +13,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'images';
+imagesFolder = 'some';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -31,7 +31,6 @@ total_signs_positive = 0;
 total_signs_truth = 0;
 
 bad_recall_names = {};
-bad_precision_names = {};
 
 for k = 1 : length(theFiles)
     baseFileName = theFiles(k).name;
@@ -48,8 +47,6 @@ for k = 1 : length(theFiles)
     just_blue = createMaskBlue(original);
     just_whitish = createMaskWhitish(original);
     just_yellow = createMaskYellow(original);
-    
-    %figure();imshow(just_yellow*255);title('just yellow bef');
     
     all_masks_no_magic = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     
@@ -71,9 +68,6 @@ for k = 1 : length(theFiles)
     % just remove the very small noise without destroying anything that is
     % connected to something, just to improve a bit the performaces of
     % regionprops
-    
-    just_yellow = imopen(just_yellow,strel('diamond',7));
-    %figure();imshow(just_yellow*255);title('just yellow');
     
     hm_i={[1 0 0; 0 1 0; 0 0 1]; [0 1 0; 0 1 0; 0 1 0]; [0 0 1; 0 1 0; 1 0 0]; [1 0 0; 0 1 0; 0 1 0];
           [0 0 1; 0 1 0; 0 1 0]; [0 1 0; 0 1 0; 1 0 0]; [0 1 0; 0 1 0; 0 0 1]; [0 0 0; 1 1 1; 0 0 0];
@@ -100,7 +94,7 @@ for k = 1 : length(theFiles)
     % put all the masks together just to make them look pretty when I show
     % them
     all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
-    all_masks_white = cat(3,255*uint8(just_red|just_whitish|just_yellow),255*(just_whitish|just_yellow),255*uint8(just_blue|just_whitish));
+    all_masks_white = cat(3,255*uint8(just_red|just_whitish),255*just_whitish,255*uint8(just_blue|just_whitish));
     
     %% REGIONPROPS STUFF
     
@@ -158,14 +152,16 @@ for k = 1 : length(theFiles)
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 10 && height >10 && height < 150
             center = [x+width/2 y+height/2];
-            width = width * 3/2;
-            height = height * 3/2;
-            hypothesisWhite = [hypothesisWhite; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
+            x = center(1) - width;
+            y = center(2) - height;
+            width = width * 4/3;
+            height = height * 4/3;
+            hypothesisWhite = [hypothesisWhite; [y y+height x x+width]];
         end
     end
     
     %get outlines of each YELLOW object
-    [B,L,N] = bwboundaries(just_yellow);
+    [B,L,N] = bwboundaries(just_yellow,4);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -178,11 +174,13 @@ for k = 1 : length(theFiles)
         width = BBox(i,3);
         height = BBox(i,4);
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-        if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 5 && height > 5 && height < 150
+        if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 10 && height >10 && height < 150
             center = [x+width/2 y+height/2];
+            x = center(1) - width;
+            y = center(2) - height;
             width = width * 3/2;
             height = height * 3/2;
-            hypothesisYellow = [hypothesisYellow; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
+            hypothesisYellow = [hypothesisYellow; [y y+height x x+width]];
         end
     end
 %     
@@ -307,14 +305,7 @@ for k = 1 : length(theFiles)
             else
                 ROI_conf = hyp;
             end
-            
-            found=0;
-            for sfi=1:size(signs_founded,1)
-                if(norm(signs_founded(sfi,:)-ROI_conf)<50)
-                    found=1;
-                end
-            end
-                
+            for sfi
             if found==0
                 signs_founded = [signs_founded; hyp];
                 passed = passed + 1;
@@ -384,11 +375,6 @@ for k = 1 : length(theFiles)
         bad_recall_names = [bad_recall_names; baseFileName];
     end
     
-    if(partial_precision<1)
-        fprintf(1,'Bad precision! %d\n',partial_precision);
-        bad_precision_names = [bad_recall_names; baseFileName];
-    end
-    
     drawnow; % Force display to update immediately.
 end
 
@@ -398,4 +384,3 @@ total_recall = total_signs_true_positive/total_signs_truth;
 fprintf(1, '\n\nPRECISION: %d  RECALL: %d\n', total_precision, total_recall);
 
 bad_recall_names
-bad_precision_names
