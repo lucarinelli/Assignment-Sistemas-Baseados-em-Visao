@@ -126,19 +126,30 @@ for k = 1 : length(theFiles)
     %get outlines of each RED object
     [B,L,N] = bwboundaries(just_red);
     %get stats
-    stats =  regionprops(L,'BoundingBox');
+    stats =  regionprops(L,'BoundingBox','Centroid');
     BBox = cat(1,stats.BoundingBox);
+    Centroids = cat(1,stats.Centroid);
     
     hypothesisRed = [];
+    hypothesisRedExt = [];
     
     for i=1:N
+        center = [x+width/2 y+height/2];
         x = BBox(i,1);
         y = BBox(i,2);
         width = BBox(i,3);
         height = BBox(i,4);
-        %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 10 && height >10 && height < 150
             hypothesisRed = [hypothesisRed; [y y+height x x+width]];
+        end
+        if abs(width-2*height)<width*0.3 && width < 150 && width > 10 && height > 5 && height < 70
+            if abs(Centroids(i,1)-center(1))<width*0.1
+                if Centroids(i,2)-center(2)>0
+                    hypothesisRedExt = [hypothesisRedExt; [y-height*1.5 y+height x x+width]];
+                else
+                    hypothesisRedExt = [hypothesisRedExt; [y y+height*2.5 x x+width]];
+                end
+            end
         end
     end
     
@@ -290,7 +301,7 @@ for k = 1 : length(theFiles)
      
      signs_founded = [];
     
-    hypothesis = [hypothesisBlue; hypothesisRed; hypothesisWhite; hypothesisYellow]; %; hypothesisWhite; hypothesisBlack;hypothesisBlueDark; hypothesisRedDark; hypothesisWhiteDark];
+    hypothesis = [hypothesisRedExt; hypothesisBlue; hypothesisRed; hypothesisWhite; hypothesisYellow]; %; hypothesisWhite; hypothesisBlack;hypothesisBlueDark; hypothesisRedDark; hypothesisWhiteDark];
     tried=0;
     passed = 0;
     for i = 1 : size(hypothesis,1)
@@ -310,7 +321,7 @@ for k = 1 : length(theFiles)
             
             found=0;
             for sfi=1:size(signs_founded,1)
-                if(norm(signs_founded(sfi,:)-ROI_conf)<50)
+                if(norm(signs_founded(sfi,:)-ROI_conf)<25)
                     found=1;
                 end
             end
@@ -336,6 +347,12 @@ for k = 1 : length(theFiles)
         pyd = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
         patch(pxd, pyd, 'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
     end
+    
+%     for i = 1 : size(hypothesisRedExt,1)
+%         pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
+%         pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
+%         patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
+%     end
     
     %draw ground truth
     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);

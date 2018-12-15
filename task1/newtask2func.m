@@ -57,25 +57,6 @@ Rmin = ceil(Rmax/2);
 %              i1 gprio       i2 danger      i3 danger    14 gprio
 ranges_theta = {-25:-0.25:-35; -25:-0.25:-35; 25:0.25:35; 25:0.25:35};% -80:-0.50:-89.5; 80:0.5:89.5};
 ranges_rho = [-0.15 0.15; 0.2 0.6; 0.8 1; 0.3 0.6]*mean(window_size); %% <-------------------------------------------------QUESTO MEAN?
-% lines = []; 
-% 
-% l_sides = [0 0 0 0];
-% for i = 1 : size(ranges_theta,1)
-%     [H,T,R] = hough(edges,'Theta',ranges_theta{i});
-% 
-%     P  = houghpeaks(H,1,'threshold',ceil(0.2*max(H(:))));
-% 
-%     lines_temp = houghlines(edges,T,R,P,'FillGap',5,'MinLength',mean(window_size)/2);
-%     if size(lines_temp)~=0
-%         for j=1:size(lines_temp)
-%             if lines_temp(j).rho > ranges_rho(i,1) && lines_temp(j).rho < ranges_rho(i,2)
-%                 fprintf(1,'i %d rho %d\n',i,lines_temp(j).rho/mean(window_size));
-%                 lines = [lines; lines_temp(j)'];
-%                 l_sides(i) = l_sides(i) + 1;
-%             end
-%         end
-%     end
-% end
 
 red_lines = [];
 
@@ -140,14 +121,35 @@ else
     area_mask6 = pi*(mean(window_size)/2)^2-area_mask7;
 end
 
-%%----------------------------------------------------------RECT MASK HAS
-%%TO BE CENTERED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-rect_mask8 = roipoly(redMask,[5*window_size(2)/12 5*window_size(2)/12 7*window_size(2)/12 7*window_size(2)/12],[1 window_size(1) 1 window_size(1)]);
-quasicirc_mask9 = circ_mask1 - rect_mask8;
-area_mask9 = area_mask1 - sum(sum(rect_mask8));
+if size(centersRedBright,1)==1
+    rect_mask8 = roipoly(redMask,[1 window_size(2) window_size(2) 1],[centersRedBright(2)-radiiRedBright/5 centersRedBright(2)-radiiRedBright/5 centersRedBright(2)+radiiRedBright/5 centersRedBright(2)+radiiRedBright/5]);
+    area_mask8 = 4*radiiRedBright*radiiRedBright/5;
+else
+    rect_mask8 = roipoly(redMask,[1 window_size(2) window_size(2) 1],[5*window_size(1)/11 5*window_size(1)/11 7*window_size(1)/11 7*window_size(1)/11]);
+    area_mask8 = sum(sum(rect_mask8));
+end
+
+top_part_mask = roipoly(redMask,[0 window_size(2) window_size(2) 0],[0 0 window_size(1)/2 window_size(1)/2]);
+bottom_part_mask = not(top_part_mask);
+quasicirc_mask9 = circ_mask1.*not(rect_mask8);
+quasicirc_mask9t = quasicirc_mask9.*top_part_mask;
+quasicirc_mask9b = quasicirc_mask9.*bottom_part_mask;
+area_mask9 = area_mask1 - area_mask8;
+area_mask9t = area_mask9/2;
+area_mask9b = area_mask9/2;
 
 diam_mask10 = roipoly(redMask,[window_size(2)/2 window_size(2)/4 window_size(2)/2 3*window_size(2)/4],[window_size(1)/4 window_size(1)/2 3*window_size(1)/4 window_size(1)/2]);
 diam_mask11 = roipoly(redMask,[window_size(2)/2 1 window_size(2)/2 window_size(2)],[1 window_size(1)/2 window_size(1) window_size(1)/2]) - diam_mask10;
+
+% figure();imshow(top_part_mask);
+% figure();imshow(rect_mask8);
+% figure();imshow(rect_mask8);
+% figure();imshow(quasicirc_mask9);
+% figure();imshow(quasicirc_mask9t);
+% figure();imshow(quasicirc_mask9b);
+% figure();imshow(diam_mask10);
+% figure();imshow(diam_mask11);
+% return;
 
 %% SCORING 
 
@@ -168,8 +170,13 @@ score_red7 = sum(sum(circ_mask7.*redMask))/area_mask7;
 %score_white7 = sum(sum(circ_mask7.*whitishMask))/sum(sum(circ_mask7));
 score_yellow7 = sum(sum(circ_mask7.*yellowMask))/area_mask7;
 
-score_white8 = sum(sum(rect_mask8.*whitishMask))/sum(sum(rect_mask8));
+score_white8 = sum(sum(rect_mask8.*whitishMask))/area_mask8;
 score_red9 = sum(sum(quasicirc_mask9.*redMask))/area_mask9;
+score_red9t = sum(sum(quasicirc_mask9t.*redMask))/area_mask9t;
+score_red9b = sum(sum(quasicirc_mask9b.*redMask))/area_mask9b;
+
+score_white9t = sum(sum(quasicirc_mask9t.*whitishMask))/area_mask9t;
+score_white9b = sum(sum(quasicirc_mask9b.*whitishMask))/area_mask9b;
 
 score_yellow10 = sum(sum(diam_mask10.*yellowMask))/sum(sum(diam_mask10));
 score_white11 = sum(sum(diam_mask11.*whitishMask))/sum(sum(diam_mask11));
@@ -177,18 +184,8 @@ score_white11 = sum(sum(diam_mask11.*whitishMask))/sum(sum(diam_mask11));
 %% DETECTION    
 result='unknown';
 
-%% DETECT STOP/FORBIDDEN(?) [WEAK]
-if score_red9 > 0.6 && score_white8 > 0.1 && score_red1 > 0.5 && score_white1 < 0.4
-    result = 'stop/forbidden';
-end
-
 %% DETECT HAVE PRIORITY
 if score_yellow10 > 0.3 && score_white11 > 0.3
-%     figure();
-%     subplot(2,2,1);imshow(redMask);title('R');
-%     subplot(2,2,2);imshow(blueMask);title('Blue');
-%     subplot(2,2,3);imshow(yellowMask);title('Y');
-%     subplot(2,2,4);imshow(whitishMask);title('w');title(result);
     result = 'hprio';
 end
 
@@ -234,6 +231,20 @@ if score_red6 > 0.6 && score_red7 < 0.5
     elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
         result = 'prohibitorycolor';
     end
+end
+
+%% DETECT FORBIDDEN and maybe stop
+if score_white9t < 0.1 && score_white9b < 0.1 && score_red9t > 0.7 && score_red9b > 0.7 %size(centersRedBright,1)==1 &&
+    result = 'stop/forbidden';
+    if size(centersRedBright,1)==1
+        newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
+        result = 'stop/forbidden--circle';
+    end
+    figure();
+    subplot(2,2,1);imshow(redMask);title('R');
+    subplot(2,2,2);imshow(blueMask);title('Blue');
+    subplot(2,2,3);imshow(yellowMask);title('Y');
+    subplot(2,2,4);imshow(whitishMask);title('w');title(result);
 end
 
 if(strcmp(result,'unknown')~=1)
