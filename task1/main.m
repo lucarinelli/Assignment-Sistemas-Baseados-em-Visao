@@ -13,7 +13,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'some';
+imagesFolder = 'images';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
   errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -158,8 +158,8 @@ for k = 1 : length(theFiles)
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 10 && height >10 && height < 150
             center = [x+width/2 y+height/2];
-            width = width * 4/3;
-            height = height * 4/3;
+            width = width * 3/2;
+            height = height * 3/2;
             hypothesisWhite = [hypothesisWhite; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
         end
     end
