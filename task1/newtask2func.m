@@ -36,9 +36,9 @@ Rmax = ceil(max(window_size)/2) + 2;
 Rmin = ceil(Rmax/2);
 
 % Find all the blue bright circles in the image
-%[centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
+[centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
 % Find all the blue dark circles in the image
-[centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
+%[centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
 
 % Find all the blue bright circles in the image
 [centersRedBright, radiiRedBright] = imfindcircles(redMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
@@ -98,19 +98,22 @@ end
 
 
 %% MASKS [SHOULD BE AS DYNAMIC AS POSSIBLE IDEALLY]
-if size(centersBlueDark,1)==1 %MAYBE WE DON'T NEED THIS
-    circ_mask1 = circularMask(centersBlueDark,radiiBlueDark+2,window_size);       
-elseif size(centersRedDark,1)==1 %MAYBE WE DON'T NEED THIS
-    circ_mask1 = circularMask(centersRedDark,radiiRedDark+2,window_size);
+if size(centersBlueBright,1)==1
+    circ_mask1 = circularMask(centersBlueBright,radiiBlueBright+2,window_size);       
+elseif size(centersRedBright,1)==1
+    circ_mask1 = circularMask(centersRedBright,radiiRedBright+2,window_size);
 else
     circ_mask1 = circularMask(window_size/2,mean(window_size)/2,window_size);
 end
 
+
+% --------------------- SHOULD THEY BE DYNAMIC?
 tria_mask3 = roipoly(redMask,[window_size(2)/2 window_size(2)/4 3*window_size(2)/4],[window_size(1)/4 3*window_size(1)/4 3*window_size(1)/4]);
 tria_mask2 = roipoly(redMask,[window_size(2)/2 1 window_size(2)],[1 window_size(1) window_size(1)])-tria_mask3;
 
 tria_mask5 = roipoly(redMask,[window_size(2)/4 3*window_size(2)/4 window_size(2)/2],[window_size(1)/4 window_size(1)/4 3*window_size(1)/4]);
 tria_mask4 = roipoly(redMask,[1 window_size(2) window_size(2)/2],[1 1 window_size(1)])-tria_mask5;
+% ----------------------
 
 if size(centersRedDark,1)==1
     circ_mask7 = circularMask(centersRedDark,radiiRedDark+2,window_size);       
@@ -119,11 +122,16 @@ else
 end
 
 if size(centersRedBright,1)==1
-    circ_mask6 = circularMask(centersRedBright,radiiRedBright+2,window_size) - circ_mask7;       
+    if size(centersRedDark,1)~=1
+        circ_mask7 = circularMask(centersRedBright,2*(radiiRedBright+2)/3,window_size);
+    end
+    circ_mask6 = circularMask(centersRedBright,radiiRedBright+2,window_size) - circ_mask7;
 else
     circ_mask6 = circularMask(window_size/2,mean(window_size)/2,window_size) - circ_mask7;
 end
 
+%%----------------------------------------------------------RECT MASK HAS
+%%TO BE CENTERED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 rect_mask8 = roipoly(redMask,[5*window_size(2)/12 5*window_size(2)/12 7*window_size(2)/12 7*window_size(2)/12],[1 window_size(1) 1 window_size(1)]);
 quasicirc_mask9 = circ_mask1 - rect_mask8;
 
@@ -187,7 +195,7 @@ end
 
 %% DETECT MANDATORY
 if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
-    if size(centersBlueDark,1)==1
+    if size(centersBlueBright,1)==1
         result='mandatory';
     elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
         result='mandatory';

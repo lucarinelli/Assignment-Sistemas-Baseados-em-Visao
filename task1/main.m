@@ -65,6 +65,10 @@ for k = 1 : length(theFiles)
     
     %% FILTERING
     
+    % just remove the very small noise without destroying anything that is
+    % connected to something, just to improve a bit the performaces of
+    % regionprops
+    
     hm_i={[1 0 0; 0 1 0; 0 0 1]; [0 1 0; 0 1 0; 0 1 0]; [0 0 1; 0 1 0; 1 0 0]; [1 0 0; 0 1 0; 0 1 0];
           [0 0 1; 0 1 0; 0 1 0]; [0 1 0; 0 1 0; 1 0 0]; [0 1 0; 0 1 0; 0 0 1]; [0 0 0; 1 1 1; 0 0 0];
           [0 0 0; 1 1 0; 0 0 1]; [0 0 1; 1 1 0; 0 0 0]; [0 0 0; 0 1 1; 1 0 0]; [1 0 0; 0 1 1; 0 0 0]};
@@ -87,6 +91,8 @@ for k = 1 : length(theFiles)
     %figure; imshow(just_red);title('R', 'FontSize', 10); % Display image.
     %figure; imshow(just_blue);title('B', 'FontSize', 10); % Display image.
     
+    % put all the masks together just to make them look pretty when I show
+    % them
     all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     all_masks_white = cat(3,255*uint8(just_red|just_whitish),255*just_whitish,255*uint8(just_blue|just_whitish));
     
