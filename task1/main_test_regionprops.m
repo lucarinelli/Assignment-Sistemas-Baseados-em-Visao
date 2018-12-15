@@ -3,6 +3,9 @@ clear all
 close all
 clc
 
+%% silence, please.
+warning('off','images:imfindcircles:warnForSmallRadius');
+
 %% load ground truth
 
 load('ground_truth.mat')
@@ -285,10 +288,12 @@ for k = 1 : length(theFiles)
     for i = 1 : size(hypothesis,1)
         hyp=floor(hypothesis(i,:));
         tried = tried +1;
-        window = original(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
-        if 1==1%task2func(window) == 1
+        windowRed = just_red(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowBlue = just_blue(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowWhitish = just_whitish(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowYellow = just_yellow(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        if newtask2func(windowRed,windowBlue,windowWhitish,windowYellow) == 1
             signs_founded = [signs_founded; hyp];
-            %figure();imshow(window);
             passed = passed + 1;
         end
     end
