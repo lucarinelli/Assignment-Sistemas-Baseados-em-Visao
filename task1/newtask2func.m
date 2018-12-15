@@ -1,4 +1,4 @@
-function [Verdict,newROI] = task2func(original)
+function [Verdict,newROI] = newtask2func(original)
 % "Nothing short of everything will really do."
 
 contrast = imadjust(original, stretchlim(original));
@@ -9,6 +9,23 @@ yellowMask = maskYellow(contrast);
 whitishMask = maskWhitish(contrast);
 gray = rgb2gray(contrast);
 edges = edge(gray,'canny');
+
+%% MAGIC ON MASKS
+
+redMask = redMask.*not(whitishMask);
+blueMask = blueMask.*not(whitishMask);
+yellowMask = yellowMask.*not(whitishMask);
+redMask = redMask.*not(blueMask);
+blueMask = blueMask.*not(redMask);
+whitishMask = whitishMask.*not(blueMask);
+whitishMask = whitishMask.*not(redMask);
+redMask = redMask.*not(yellowMask);
+redMask = redMask.*not(edges);
+blueMask = blueMask.*not(edges);
+whitishMask = whitishMask.*not(edges);
+yellowMask = yellowMask.*not(edges);
+
+all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|yellowMask),255*uint8(blueMask|whitishMask));
     
 %% CIRCLES
 %dinamically adjust radii filter
@@ -21,7 +38,7 @@ Rmin = ceil(Rmax/2);
 [centersDark, radiiDark] = imfindcircles(gray, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.96);
 
 % Find all the blue bright circles in the image
-[centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
+%[centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
 % Find all the blue dark circles in the image
 %[centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
 
@@ -164,7 +181,7 @@ end
 
 %% DETECT MANDATORY
 if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
-    if size(centersBlueBright,1)==1
+    if size(centersDark,1)==1
         result='mandatory';
     elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
         result='mandatory';
@@ -179,6 +196,15 @@ if score_red6 > 0.5 && score_red7 < 0.5
         result = 'prohibitory';
     end
 end
+
+figure();imshow(all_masks_white);
+figure();
+subplot(3,2,1);imshow(redMask);title('R');
+subplot(3,2,2);imshow(blueMask);title('Blue');
+subplot(3,2,3);imshow(yellowMask);title('Y');
+subplot(3,2,4);imshow(whitishMask);title('w');
+subplot(3,2,5);imshow(gray);title('gray');
+subplot(3,2,6);imshow(edges);title('edges');
 
 if(strcmp(result,'unknown')~=1)
     Verdict = 1;

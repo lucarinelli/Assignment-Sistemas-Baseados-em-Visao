@@ -1,4 +1,4 @@
-function [Verdict] = task2func(original)
+function [Verdict,newROI] = task2func(original)
 % "Nothing short of everything will really do."
 
 contrast = imadjust(original, stretchlim(original));
