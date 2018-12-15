@@ -2,8 +2,6 @@ function [Verdict,newROI] = newtask2func(redMask,blueMask,whitishMask,yellowMask
 
 window_size = size(redMask);
 
-newROI = [];
-
 % "Nothing short of everything will really do."
 
 % contrast = imadjust(original, stretchlim(original));
@@ -182,12 +180,7 @@ if score_red9 > 0.6 && score_white8 > 0.3
 end
 
 %% DETECT HAVE PRIORITY
-if score_yellow10 > 0.3 && score_white11 > 0.3
-%     figure();
-%     subplot(2,2,1);imshow(redMask);title('R');
-%     subplot(2,2,2);imshow(blueMask);title('Blue');
-%     subplot(2,2,3);imshow(yellowMask);title('Y');
-%     subplot(2,2,4);imshow(whitishMask);title('w');title(result);
+if score_yellow10 > 0.5 && score_white11 > 0.5
     result = 'hprio';
 end
 
@@ -217,7 +210,7 @@ end
 if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
     if size(centersBlueBright,1)==1
         result='mandatorycircle';
-        newROI = [centersBlueBright(2)-radiiBlueBright centersBlueBright(2)+radiiBlueBright centersBlueBright(1)-radiiBlueBright centersBlueBright(1)+radiiBlueBright];
+        newROI = [centersBlueBright(2)-radiiBlueBright centersBlueBright(2)+radiiBlueBright centersBlueBright(1)-radiiBlueBright centersBlueBright(1)+radiiBlueBright]
     elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
         result='mandatorycolor';
     end
@@ -228,7 +221,7 @@ if score_red6 > 0.6 && score_red7 < 0.5
     if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
         if score_red6 > 0.8
             result = 'prohibitorycircle';
-            newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
+            newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiBlBright centersBlueBright(1)-radiiBlueBright centersBlueBright(1)+radiiBlueBright]
         end
     elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
         result = 'prohibitorycolor';
@@ -237,11 +230,11 @@ end
 
 if(strcmp(result,'unknown')~=1)
     Verdict = 1;
-%     figure();
-%     subplot(2,2,1);imshow(redMask);title('R');
-%     subplot(2,2,2);imshow(blueMask);title('Blue');
-%     subplot(2,2,3);imshow(yellowMask);title('Y');
-%     subplot(2,2,4);imshow(whitishMask);title('w');title(result);
+    figure();
+    subplot(2,2,1);imshow(redMask);title('R');
+    subplot(2,2,2);imshow(blueMask);title('Blue');
+    subplot(2,2,3);imshow(yellowMask);title('Y');
+    subplot(2,2,4);imshow(whitishMask);title('w');title(result);
 else
     Verdict = 0;
 end
