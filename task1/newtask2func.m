@@ -5,7 +5,7 @@ window_size = size(redMask);
 
 newROI = [];
 
-% all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|yellowMask),255*uint8(blueMask|whitishMask));
+all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|yellowMask),255*uint8(blueMask|whitishMask));
     
 %% CIRCLES
 %dinamically adjust radii filter
@@ -116,16 +116,6 @@ area_mask9b = area_mask9/2;
 diam_mask10 = roipoly(redMask,[window_size(2)/2 window_size(2)/4 window_size(2)/2 3*window_size(2)/4],[window_size(1)/4 window_size(1)/2 3*window_size(1)/4 window_size(1)/2]);
 diam_mask11 = roipoly(redMask,[window_size(2)/2 1 window_size(2)/2 window_size(2)],[1 window_size(1)/2 window_size(1) window_size(1)/2]) - diam_mask10;
 
-% figure();imshow(top_part_mask);
-% figure();imshow(rect_mask8);
-% figure();imshow(rect_mask8);
-% figure();imshow(quasicirc_mask9);
-% figure();imshow(quasicirc_mask9t);
-% figure();imshow(quasicirc_mask9b);
-% figure();imshow(diam_mask10);
-% figure();imshow(diam_mask11);
-% return;
-
 %% SCORING 
 
 score_blue1 = sum(sum(circ_mask1.*blueMask))/area_mask1;
@@ -134,6 +124,9 @@ score_white1 = sum(sum(circ_mask1.*whitishMask))/area_mask1;
 
 score_red2 = sum(sum(tria_mask2.*redMask))/sum(sum(tria_mask2));
 score_red4 = sum(sum(tria_mask4.*redMask))/sum(sum(tria_mask4));
+
+score_white2 = sum(sum(tria_mask2.*whitishMask))/sum(sum(tria_mask2));
+score_white4 = sum(sum(tria_mask4.*whitishMask))/sum(sum(tria_mask4));
 
 score_red3 = sum(sum(tria_mask3.*redMask))/sum(sum(tria_mask3));
 score_red5 = sum(sum(tria_mask5.*redMask))/sum(sum(tria_mask5));
@@ -166,25 +159,21 @@ if score_yellow10 > 0.3 && score_white11 > 0.3
 end
 
 %% DETECT DANGER (Needs polygon/line recognition) [WEAK]
-% if (score_red2 > 0.5 && score_red3 < 0.5)% && score_red9 < 0.6) %&& (redl_sides(2)>0||l_sides(2)>0)||(redl_sides(3)>0||l_sides(3)>0))
-%     result = 'dangerbycolor';
-% end
-
-if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red9 < 0.5 && score_red1 < 0.4 && score_red2 > 0.4 && score_red3 < 0.4
-    result = 'dangerbylines';
+if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65
+    result = 'dangerbyoneline';
 end
 
-% if score_red2 > 0.5 && score_red3 < 0.3 && score_red9 < 0.3 && redl_sides(2) > 0 && redl_sides(3) > 0
-%     result = 'dangerfoolish';
-% end
+if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65
+    result = 'dangerby2line';
+end
 
 %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [WEAK]
-% if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 && strcmp(result,'danger')~=1
-%     result = 'gpriofirst';
-% end
+if (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65
+    result = 'gpriobyoneline';
+end
 
-if score_red4 > 0.3 && score_red5 < 0.3 && score_red2 < 0.25 && (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red1 < 0.4
-    result = 'gpriosecond';
+if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65
+    result = 'gprioby2line';
 end
 
 %% DETECT MANDATORY
@@ -192,8 +181,8 @@ if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 
     if size(centersBlueBright,1)==1
         result='mandatorycircle';
         newROI = [centersBlueBright(2)-radiiBlueBright centersBlueBright(2)+radiiBlueBright centersBlueBright(1)-radiiBlueBright centersBlueBright(1)+radiiBlueBright];
-    elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
-        result='mandatorycolor';
+%     elseif score_red2 < 0.2 && score_red4 < 0.3 && score_white1 > 0.1
+%         result='mandatorycolor';
     end
 end
 
@@ -201,30 +190,39 @@ end
 if score_red6 > 0.6 && score_red7 < 0.5
     if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
         if score_red6 > 0.8
-            result = 'prohibitorycircle';
+            result = 'prohibitory2circles';
             newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         end
-    elseif score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
-        result = 'prohibitorycolor';
+    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
+        result = 'prohibitory1circle';
     end
 end
 
-%% DETECT FORBIDDEN and maybe stop
-if score_white9t < 0.1 && score_white9b < 0.1 && score_red9t > 0.7 && score_red9b > 0.7 && score_red8 < 0.4
-    result = 'stop/forbidden';
+%% DETECT STOP <----- not good enough, too many errors
+if score_white9t < 0.4 && score_white9b < 0.4 && score_red9t > 0.5 && score_red9b > 0.5 && score_red8 < 0.7 && score_white8 > 0.1
+    result = 'stop';
     if size(centersRedBright,1)==1
         newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
-        result = 'stop/forbidden--circle';
+        result = 'stop--circle';
+    end
+end
+
+%% DETECT FORBIDDEN
+if score_white9t < 0.1 && score_white9b < 0.1 && score_red9t > 0.7 && score_red9b > 0.7 && score_red8 < 0.4
+    result = 'forbidden';
+    if size(centersRedBright,1)==1
+        newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
+        result = 'forbidden--circle';
     end
 end
 
 if(strcmp(result,'unknown')~=1)
     Verdict = 1;
-    figure();
-    subplot(2,2,1);imshow(redMask);title('R');
-    subplot(2,2,2);imshow(blueMask);title('Blue');
-    subplot(2,2,3);imshow(yellowMask);title('Y');
-    subplot(2,2,4);imshow(whitishMask);title('w');title(result);
+    figure();imshow(all_masks_white);title(result);
+%     subplot(2,2,1);imshow(redMask);title('R');
+%     subplot(2,2,2);imshow(blueMask);title('Blue');
+%     subplot(2,2,3);imshow(yellowMask);title('Y');
+%     subplot(2,2,4);imshow(whitishMask);title('w');
 else
     Verdict = 0;
 end

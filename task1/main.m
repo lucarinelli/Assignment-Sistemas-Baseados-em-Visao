@@ -55,11 +55,14 @@ for k = 1 : length(theFiles)
     
     %% LET'S OBTAIN AS MANY COMPONENTS AS WE CAN, IN A REASONABLE WAY...
     
-    old_whitish = just_whitish;
+    pre_whitish = just_whitish;
+    old_red = just_red; % used later for filtering task2func
+    old_blue = just_blue; % used later for filtering task2func
     just_whitish = just_whitish.*not(just_blue); % remove blue from white
     just_whitish = just_whitish.*not(just_red); % remove red from white
-    just_red = just_red.*not(old_whitish); % if it is too white, then shouldn't be red
-    just_blue = just_blue.*not(old_whitish); % same for blue
+    old_whitish = just_whitish; % used later for filtering task2func
+    just_red = just_red.*not(pre_whitish); % if it is too white, then shouldn't be red
+    just_blue = just_blue.*not(pre_whitish); % same for blue
     just_blue = just_blue.*not(just_red); % if it is too red shouldn't be blue
     just_red = just_red.*not(just_blue); % and also the countrary is true
     just_blue = just_blue.*not(edges); %cut on edges to get more components... maybe...
@@ -101,6 +104,7 @@ for k = 1 : length(theFiles)
     % them
     all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     all_masks_white = cat(3,255*uint8(just_red|just_whitish|just_yellow),255*(just_whitish|just_yellow),255*uint8(just_blue|just_whitish));
+    all_masks_white_old = cat(3,255*uint8(old_red|old_whitish|just_yellow),255*(old_whitish|just_yellow),255*uint8(old_blue|old_whitish));
     
     %% REGIONPROPS STUFF
     
@@ -191,8 +195,8 @@ for k = 1 : length(theFiles)
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 5 && height > 5 && height < 150
             center = [x+width/2 y+height/2];
-            width = width * 3/2;
-            height = height * 3/2;
+            width = width * 5/3;
+            height = height * 5/3;
             hypothesisYellow = [hypothesisYellow; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
         end
     end
@@ -308,9 +312,9 @@ for k = 1 : length(theFiles)
     for i = 1 : size(hypothesis,1)
         hyp=floor(hypothesis(i,:));
         tried = tried +1;
-        windowRed = just_red(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
-        windowBlue = just_blue(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
-        windowWhitish = just_whitish(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowRed = old_red(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowBlue = old_blue(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowWhitish = old_whitish(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
         windowYellow = just_yellow(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
         [Verdict, newROI] = newtask2func(windowRed,windowBlue,windowWhitish,windowYellow);
         if Verdict == 1
@@ -339,7 +343,7 @@ for k = 1 : length(theFiles)
     
     %% Print
     
-    figure();imshow(all_masks_white);title('All masks', 'FontSize', 15); % Display image
+    figure();imshow(all_masks_white_old);title(k, 'FontSize', 15); % Display image
     
     
     % draw what we found
