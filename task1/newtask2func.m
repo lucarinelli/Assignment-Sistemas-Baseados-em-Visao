@@ -22,8 +22,8 @@ Rmin = ceil(max([min([Rmax/2 min(window_size)/2]) 8]));
 %% LINES
 
 %              i1 gprio       i2 danger      i3 danger    14 gprio
-ranges_theta = {-10:-0.50:-55; -10:-0.50:-55; 10:0.50:55; 10:0.50:55};% -80:-0.50:-89.5; 80:0.5:89.5};
-ranges_rho = [-0.15 0.15; 0.1 0.7; 0.6 1.2; 0.2 0.7]*mean(window_size); %% <-------------------------------------------------QUESTO MEAN?
+ranges_theta = {-15:-0.25:-55; -15:-0.25:-55; 15:0.25:55; 15:0.25:55};% -80:-0.50:-89.5; 80:0.5:89.5};
+ranges_rho = [-0.30 0.40; 0.1 0.7; 0.6 1.2; 0.2 0.7]*mean(window_size); %% <-------------------------------------------------QUESTO MEAN?
 
 red_lines = [];
 
@@ -59,14 +59,11 @@ else
     area_mask1 = pi*(mean(window_size)/2)^2;
 end
 
-
-% --------------------- SHOULD THEY BE DYNAMIC?
 tria_mask3 = roipoly(redMask,[window_size(2)/2 window_size(2)/4 3*window_size(2)/4],[window_size(1)/4 3*window_size(1)/4 3*window_size(1)/4]);
 tria_mask2 = roipoly(redMask,[window_size(2)/2 1 window_size(2)],[1 window_size(1) window_size(1)])-tria_mask3;
 
 tria_mask5 = roipoly(redMask,[window_size(2)/4 3*window_size(2)/4 window_size(2)/2],[window_size(1)/4 window_size(1)/4 3*window_size(1)/4]);
 tria_mask4 = roipoly(redMask,[1 window_size(2) window_size(2)/2],[1 1 window_size(1)])-tria_mask5;
-% ----------------------
 
 if size(centersRedDark,1)==1
     circ_mask7 = circularMask(centersRedDark,radiiRedDark,window_size);
@@ -172,7 +169,7 @@ if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 
 end
 
 %% DETECT MANDATORY
-if score_blue1 > 0.6 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
+if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 0.4
     if size(centersBlueBright,1)==1
         result='mandatorycircle';
         newROI = [centersBlueBright(2)-radiiBlueBright centersBlueBright(2)+radiiBlueBright centersBlueBright(1)-radiiBlueBright centersBlueBright(1)+radiiBlueBright];
