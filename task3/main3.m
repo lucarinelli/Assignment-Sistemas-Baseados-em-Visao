@@ -8,6 +8,7 @@ clc
 load('ground_truth_3.mat')
 
 %% training
+
 directories = {'trafficlight'; 'bottleneck'; 'leftcurve'; 'rightcurve'; 'crossroad'; 'scurve'; 'snow'; 'esclamationpoint'};
 datas = TrainingData(directories);
 

@@ -29,9 +29,9 @@ for k = 1 : length(theFiles)
     s=16000*0.03;
     mask1 = AreaConstraint(mask,s);
     mask2 = DefineCentralRegion(mask1);
-    ss = 700;
+    ss = 550;
     mask3 =AreaConstraint(mask2,ss);
-    %figure();imshow(mask3);
+    figure();imshow(mask3);
     CC = bwconncomp(mask3);
     region = regionprops(CC,'Area','BoundingBox', 'Centroid', 'MajorAxisLength','MinorAxisLength','Orientation');
     
@@ -66,35 +66,41 @@ e(ww).all_Maxaxis = cat(1,a(ww).feature.Maxaxis);
 end
 lung = 0;
 end;
-% %% plot area    
-% for zz=1:length(directory)
-%     lung = length(e(zz).all_area);
-%    clear x;
-% for tt = 1 : lung
-%     x(tt) = zz;
-% end
-% average_area = mean(e(zz).all_area);
-%     hold on
-%     scatter(zz,average_area,15,'filled');
-%     %scatter(x,e(zz).all_area,15,'filled');
-% end
-% hold off
-%% plot centroid
-tot_x = 0;
-tot_y = 0;
+%% plot area    
 for zz=1:length(directory)
-
-    hold on  
-    %scatter(e(zz).all_centroid(:,1),e(zz).all_centroid(:,2),10,'filled');grid;
-    legend('trafficlight', 'bottleneck' ,'leftcurve' ,'rightcurve', 'crossroad' ,'scurve', 'snow', 'esclamationpoint');
-    average_x = mean(e(zz).all_centroid(:,1));
-    average_y = mean(e(zz).all_centroid(:,2));
-    scatter(average_x,average_y,30,'filled');grid 
-      
+    lung = length(e(zz).all_area);
+   clear x;
+for tt = 1 : lung
+    x(tt) = zz;
+end
+ max_area = max(e(zz).all_area);
+ min_area = min(e(zz).all_area);
+ average_area = mean(e(zz).all_area);
+    hold on
+%     scatter(zz,average_area,15,'filled');
+%     scatter(x,e(zz).all_area,15,'filled');
 end
 hold off
+%% plot centroid
+
+for zz=1:length(directory)
+
+%     hold on  
+%     scatter(e(zz).all_centroid(:,1),e(zz).all_centroid(:,2),10,'filled');grid;
+%     legend('trafficlight', 'bottleneck' ,'leftcurve' ,'rightcurve', 'crossroad' ,'scurve', 'snow', 'esclamationpoint');
+    average_x = mean(e(zz).all_centroid(:,1));
+    average_y = mean(e(zz).all_centroid(:,2));
+    max_centr_x = max(e(zz).all_centroid(:,1));
+    max_centr_y = max(e(zz).all_centroid(:,2));
+    min_centr_x = min(e(zz).all_centroid(:,1));
+    min_centr_y = min(e(zz).all_centroid(:,2));
+%     scatter(average_x,average_y,30,'filled');grid 
+      
+end
+%hold off
 
 %% plot maxaxis
+
 
 end
  
