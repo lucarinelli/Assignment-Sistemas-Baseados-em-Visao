@@ -58,6 +58,7 @@ for k = 1 : length(theFiles)
     pre_whitish = just_whitish;
     old_red = just_red; % used later for filtering task2func
     old_blue = just_blue; % used later for filtering task2func
+    
     just_whitish = just_whitish.*not(just_blue); % remove blue from white
     just_whitish = just_whitish.*not(just_red); % remove red from white
     old_whitish = just_whitish; % used later for filtering task2func
@@ -66,8 +67,8 @@ for k = 1 : length(theFiles)
     just_blue = just_blue.*not(just_red); % if it is too red shouldn't be blue
     just_red = just_red.*not(just_blue); % and also the countrary is true
     just_blue = just_blue.*not(edges); %cut on edges to get more components... maybe...
+    %just_red = just_red.*not(edges); %cut on edges to get more components... maybe...
     just_whitish = just_whitish.*not(edges); %cut on edges to get more components... maybe...
-    %     just_red = just_red.*not(edges);
     
     %% FILTERING
     
@@ -104,7 +105,7 @@ for k = 1 : length(theFiles)
     % them
     all_masks = cat(3,255*uint8(just_red),255*just_whitish,255*uint8(just_blue));
     all_masks_white = cat(3,255*uint8(just_red|just_whitish|just_yellow),255*(just_whitish|just_yellow),255*uint8(just_blue|just_whitish));
-    all_masks_white_old = cat(3,255*uint8(old_red|old_whitish|just_yellow),255*(old_whitish|just_yellow),255*uint8(old_blue|old_whitish));
+    all_masks_white_old = cat(3,255*uint8(old_red|old_whitish|just_yellow),255*(old_whitish|just_yellow),255*uint8(just_blue|old_whitish));
     
     %% REGIONPROPS STUFF
     
@@ -128,7 +129,7 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each RED object
-    [B,L,N] = bwboundaries(just_red);
+    [B,L,N] = bwboundaries(just_red,4);
     %get stats
     stats =  regionprops(L,'BoundingBox','Centroid');
     BBox = cat(1,stats.BoundingBox);
@@ -146,19 +147,19 @@ for k = 1 : length(theFiles)
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 12 && height >12 && height < 150
             hypothesisRed = [hypothesisRed; [y y+height x x+width]];
         end
-        if abs(width-2*height)<width*0.3 && width < 150 && width > 10 && height > 5 && height < 70
+        if abs(width-2*height)<width*0.4 && width < 150 && width > 10 && height > 5 && height < 70
             if abs(Centroids(i,1)-center(1))<width*0.1
                 if Centroids(i,2)-center(2)>0
-                    hypothesisRedExt = [hypothesisRedExt; [y-height*1.5 y+height x x+width]];
+                    hypothesisRedExt = [hypothesisRedExt; [y-height*1.5 y+height x-2 x+width+2]];
                 else
-                    hypothesisRedExt = [hypothesisRedExt; [y y+height*2.5 x x+width]];
+                    hypothesisRedExt = [hypothesisRedExt; [y y+height*2.5 x-2 x+width+2]];
                 end
             end
         end
     end
     
     %get outlines of each WHITE object
-    [B,L,N] = bwboundaries(just_whitish,4);
+    [B,L,N] = bwboundaries(just_whitish);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -200,107 +201,7 @@ for k = 1 : length(theFiles)
             hypothesisYellow = [hypothesisYellow; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
         end
     end
-    %
-    %     % and now let's look into the darker regions of deep space!
-    %
-    %     %get outlines of each dark obj in BLUE
-    %     [B,L,N] = bwboundaries(not(just_blue));
-    %     %get stats
-    %     stats =  regionprops(L,'BoundingBox');%,'ConvexHull','Area');
-    %     BBox = cat(1,stats.BoundingBox);
-    %
-    %     hypothesisBlueDark = [];
-    %
-    %     for i=1:N
-    %         x = BBox(i,1);
-    %         y = BBox(i,2);
-    %         width = BBox(i,3);
-    %         height = BBox(i,4);
-    %         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-    %         if abs(width-height)<abs(width*0.5) && width < 100 && width > 10 && height >10 && height < 100
-    %             center = [x+width/2 y+height/2];
-    %             x = center(1) - width;
-    %             y = center(2) - height;
-    %             width = width * 2;
-    %             height = height * 2;
-    %             hypothesisBlueDark = [hypothesisBlueDark; [y y+height x x+width]];
-    %         end
-    %     end
-    %
-    %     %get outlines of each dark obj in RED
-    %     [B,L,N] = bwboundaries(not(just_red));
-    %     %get stats
-    %     stats =  regionprops(L,'BoundingBox');
-    %     BBox = cat(1,stats.BoundingBox);
-    %
-    %     hypothesisRedDark = [];
-    %
-    %     for i=1:N
-    %         x = BBox(i,1);
-    %         y = BBox(i,2);
-    %         width = BBox(i,3);
-    %         height = BBox(i,4);
-    %         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-    %         if abs(width-height)<abs(width*0.5) && width < 100 && width > 10 && height >10 && height < 100
-    %             center = [x+width/2 y+height/2];
-    %             x = center(1) - width;
-    %             y = center(2) - height;
-    %             width = width * 2;
-    %             height = height * 2;
-    %             hypothesisRedDark = [hypothesisRedDark; [y y+height x x+width]];
-    %         end
-    %     end
-    %
-    %     %get outlines of each dark in WHITE
-    %     [B,L,N] = bwboundaries(not(just_whitish));
-    %     %get stats
-    %     stats =  regionprops(L,'BoundingBox');
-    %     BBox = cat(1,stats.BoundingBox);
-    %
-    %     hypothesisWhiteDark = [];
-    %
-    %     for i=1:N
-    %         x = BBox(i,1);
-    %         y = BBox(i,2);
-    %         width = BBox(i,3);
-    %         height = BBox(i,4);
-    %         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-    %         if abs(width-height)<abs(width*0.5) && width < 100 && width > 10 && height >10 && height < 100
-    %             center = [x+width/2 y+height/2];
-    %             x = center(1) - width;
-    %             y = center(2) - height;
-    %             width = width * 2;
-    %             height = height * 2;
-    %             hypothesisWhiteDark = [hypothesisWhiteDark; [y y+height x x+width]];
-    %         end
-    %     end
-    %
-    %     %get outlines of each BLACK obj in all masks
-    %     [B,L,N] = bwboundaries(not(just_whitish|just_red|just_blue));
-    %     %get stats
-    %     stats =  regionprops(L,'BoundingBox');
-    %     BBox = cat(1,stats.BoundingBox);
-    %
-    %     hypothesisBlack = [];
-    %
-    %     for i=1:N
-    %         x = BBox(i,1);
-    %         y = BBox(i,2);
-    %         width = BBox(i,3);
-    %         height = BBox(i,4);
-    %         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
-    %         if abs(width-height)<abs(width*0.5) && width < 100 && width > 10 && height >10 && height < 100
-    %             center = [x+width/2 y+height/2];
-    %             x = center(1) - width;
-    %             y = center(2) - height;
-    %             width = width * 2;
-    %             height = height * 2;
-    %             hypothesisBlack = [hypothesisBlack; [y y+height x x+width]];
-    %         end
-    %     end
-    %
-    %
-    %
+
     %% Filtering
     
     signs_founded = [];
@@ -313,7 +214,7 @@ for k = 1 : length(theFiles)
         hyp=floor(hypothesis(i,:));
         tried = tried +1;
         windowRed = old_red(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
-        windowBlue = old_blue(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
+        windowBlue = just_blue(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
         windowWhitish = old_whitish(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
         windowYellow = just_yellow(max(1,hyp(1)):min(hyp(2),original_size(1)),max(1,hyp(3)):min(original_size(2),hyp(4)),:);
         [Verdict, newROI] = newtask2func(windowRed,windowBlue,windowWhitish,windowYellow);
@@ -343,31 +244,32 @@ for k = 1 : length(theFiles)
     
     %% Print
     
-    %     for i = 1 : size(hypothesisRedExt,1)
-    %         pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
-    %         pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
-    %         patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
-    %     end
-    
     figure();
-    subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
-    
-    hold on
-    
-    %draw ground truth
-    gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
-    gt_rectangles = ground_truth(gt_index).gt;
-    for gti = 1 : size(gt_rectangles,1)
-        px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
-        py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
-        patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
-    end
-    
-    hold off
-    
-    subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
-    
-    subplot(1,3,3);imshow(original);title(k, 'Fontsize', 15);
+%     subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
+%     
+%     hold on
+%     
+%     for i = 1 : size(hypothesisRedExt,1)
+%         pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
+%         pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
+%         patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
+%     end
+%     
+%     %draw ground truth
+     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
+     gt_rectangles = ground_truth(gt_index).gt;
+%     for gti = 1 : size(gt_rectangles,1)
+%         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
+%         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
+%         patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
+%     end
+%     
+%     hold off
+%     
+%     subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
+%     
+%     subplot(1,3,3);
+    imshow(original);title(k, 'Fontsize', 15);
     
     % draw what we found
     

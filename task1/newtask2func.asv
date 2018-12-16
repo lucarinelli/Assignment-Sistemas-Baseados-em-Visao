@@ -9,29 +9,21 @@ all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|ye
     
 %% CIRCLES
 %dinamically adjust radii filter
-Rmax = ceil(max(window_size)/2) + 2;
-Rmin = ceil(Rmax/2);
+Rmax = ceil(max([max(window_size)/2 6]))+2;
+Rmin = ceil(max([min([Rmax/2 min(window_size)/2]) 8]));
 
 % Find all the blue bright circles in the image
 [centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
-% Find all the blue dark circles in the image
-%[centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
-
 % Find all the blue bright circles in the image
 [centersRedBright, radiiRedBright] = imfindcircles(redMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
 % Find all the blue dark circles in the image
 [centersRedDark, radiiRedDark] = imfindcircles(redMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
 
-% Find all the blue bright circles in the image
-%[centersWhiteBright, radiiWhiteBright] = imfindcircles(whitishMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
-% Find all the blue dark circles in the image
-%[centersWhitishDark, radiiWhitishDark] = imfindcircles(redMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
-
 %% LINES
 
 %              i1 gprio       i2 danger      i3 danger    14 gprio
-ranges_theta = {-25:-0.25:-35; -25:-0.25:-35; 25:0.25:35; 25:0.25:35};% -80:-0.50:-89.5; 80:0.5:89.5};
-ranges_rho = [-0.15 0.15; 0.2 0.6; 0.8 1; 0.3 0.6]*mean(window_size); %% <-------------------------------------------------QUESTO MEAN?
+ranges_theta = {-10:-0.50:-55; -10:-0.50:-55; 10:0.50:55; 10:0.50:55};% -80:-0.50:-89.5; 80:0.5:89.5};
+ranges_rho = [-0.15 0.15; 0.1 0.7; 0.6 1.2; 0.2 0.7]*mean(window_size); %% <-------------------------------------------------QUESTO MEAN?
 
 red_lines = [];
 
@@ -39,9 +31,9 @@ redl_sides = [0 0 0 0];
 for i = 1 : size(ranges_theta,1)
     [H,T,R] = hough(redMask,'Theta',ranges_theta{i});
 
-    P  = houghpeaks(H,1,'threshold',ceil(0.2*max(H(:))));
+    P  = houghpeaks(H,2,'threshold',ceil(0.2*max(H(:))));
 
-    lines_temp = houghlines(redMask,T,R,P,'FillGap',5,'MinLength',mean(2*window_size)/3);
+    lines_temp = houghlines(redMask,T,R,P,'FillGap',1,'MinLength',window_size(1)/2);
     
     if size(lines_temp)~=0
         for j=1:size(lines_temp)
@@ -92,7 +84,7 @@ if size(centersRedBright,1)==1
     circ_mask6 = circularMask(centersRedBright,radiiRedBright,window_size) - circ_mask7;
     area_mask6 = pi*(radiiRedBright)^2-area_mask7;
 else
-    circ_mask6 = circularMask(window_size/2,mean(window_size)/2,window_size) - circ_mask7;
+    circ_mask6 = circularMask(window_size/2,min(window_size)/2,window_size) - circ_mask7;
     area_mask6 = pi*(mean(window_size)/2)^2-area_mask7;
 end
 
@@ -131,6 +123,9 @@ score_white4 = sum(sum(tria_mask4.*whitishMask))/sum(sum(tria_mask4));
 score_red3 = sum(sum(tria_mask3.*redMask))/sum(sum(tria_mask3));
 score_red5 = sum(sum(tria_mask5.*redMask))/sum(sum(tria_mask5));
 
+score_yellow3 = sum(sum(tria_mask3.*yellowMask))/sum(sum(tria_mask3));
+score_yellow5 = sum(sum(tria_mask5.*yellowMask))/sum(sum(tria_mask5));
+
 score_red6 = sum(sum(circ_mask6.*redMask))/area_mask6;
 score_red7 = sum(sum(circ_mask7.*redMask))/area_mask7;
 
@@ -158,34 +153,22 @@ if score_yellow10 > 0.3 && score_white11 > 0.3
     result = 'hprio';
 end
 
-%% DETECT DANGER (Needs polygon/line recognition) [WEAK]
-% if (score_red2 > 0.5 && score_red3 < 0.5)% && score_red9 < 0.6) %&& (redl_sides(2)>0||l_sides(2)>0)||(redl_sides(3)>0||l_sides(3)>0))
-%     result = 'dangerbycolor';
-% end
-
-if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.3 && score_white2 < 0.55
+%% DETECT DANGER
+if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerbyoneline';
 end
 
-if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red9 < 0.5 && score_red1 < 0.4 && score_red2 > 0.4 && score_red3 < 0.4 && score_white2 < 0.55
+if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerby2line';
 end
 
-% if score_red2 > 0.5 && score_red3 < 0.3 && score_red9 < 0.3 && redl_sides(2) > 0 && redl_sides(3) > 0
-%     result = 'dangerfoolish';
-% end
-
-%% DETECT GIVE PRIORITY (Needs polygon/line recognition) [WEAK]
-% if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 && strcmp(result,'danger')~=1
-%     result = 'gpriofirst';
-% end
-
-if score_white4 < 0.5 && score_red4 > 0.3 && score_red5 < 0.3 && score_red2 < 0.25 && (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red1 < 0.4
-    result = 'gprio1line';
+%% DETECT GIVE PRIORITY
+if (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
+    result = 'gpriobyoneline';
 end
 
-if score_white4 < 0.5 && score_red4 > 0.3 && score_red5 < 0.3 && score_red2 < 0.25 && (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red1 < 0.4 
-    result = 'gprio2line';
+if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
+    result = 'gprioby2line';
 end
 
 %% DETECT MANDATORY
@@ -199,23 +182,24 @@ if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 
 end
 
 %% DETECT PROHIBITORY
-if score_red6 > 0.6 && score_red7 < 0.5
+if score_red6 > 0.6 && score_red7 < 0.5 && score_yellow7 < 0.15
     if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
         if score_red6 > 0.8
             result = 'prohibitory2circles';
             newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         end
-    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
+    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
         result = 'prohibitory1circle';
     end
 end
 
 %% DETECT STOP <----- not good enough, too many errors
 if score_white9t < 0.4 && score_white9b < 0.4 && score_red9t > 0.5 && score_red9b > 0.5 && score_red8 < 0.7 && score_white8 > 0.1
-    result = 'stop';
     if size(centersRedBright,1)==1
         newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         result = 'stop--circle';
+    elseif score_red1 > 0.73 && abs(window_size(1)-mean(window_size))<0.05*mean(window_size) && score_white8 > 0.2 && score_white1 
+         result = 'stop--color';
     end
 end
 
@@ -231,6 +215,22 @@ end
 if(strcmp(result,'unknown')~=1)
     Verdict = 1;
     figure();imshow(all_masks_white);title(result);
+    hold on
+    for i = 1:length(red_lines)
+       xy = [red_lines(i).point1; red_lines(i).point2];
+       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
+
+       % Plot beginnings and ends of lines
+       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+
+    end
+    %Plot bright circles in blue
+    viscircles(centersBlueBright, radiiBlueBright,'Color','b');
+    %Plot dark circles in dashed red boundaries
+    viscircles(centersRedDark, radiiRedDark,'LineStyle','--','Color','r');
+    %Plot bright circles in blue
+    viscircles(centersRedBright, radiiRedBright,'Color','r');
 %     subplot(2,2,1);imshow(redMask);title('R');
 %     subplot(2,2,2);imshow(blueMask);title('Blue');
 %     subplot(2,2,3);imshow(yellowMask);title('Y');
