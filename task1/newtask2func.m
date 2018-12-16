@@ -9,8 +9,8 @@ all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|ye
     
 %% CIRCLES
 %dinamically adjust radii filter
-Rmax = ceil(max(window_size)/2) + 2;
-Rmin = ceil(Rmax/2);
+Rmax = ceil(max(window_size)/2)+2;
+Rmin = ceil(min([Rmax/2 min(window_size)/2]));
 
 % Find all the blue bright circles in the image
 [centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
@@ -203,7 +203,7 @@ end
 
 %% DETECT STOP <----- not good enough, too many errors
 if score_white9t < 0.4 && score_white9b < 0.4 && score_red9t > 0.5 && score_red9b > 0.5 && score_red8 < 0.7 && score_white8 > 0.1
-    result = 'stop';
+    %result = 'stop';
     if size(centersRedBright,1)==1
         newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         result = 'stop--circle';

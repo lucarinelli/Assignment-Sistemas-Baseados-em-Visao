@@ -56,8 +56,7 @@ for k = 1 : length(theFiles)
     %% LET'S OBTAIN AS MANY COMPONENTS AS WE CAN, IN A REASONABLE WAY...
     
     pre_whitish = just_whitish;
-    old_red = just_red; % used later for filtering task2func
-    old_blue = just_blue; % used later for filtering task2func
+    
     just_whitish = just_whitish.*not(just_blue); % remove blue from white
     just_whitish = just_whitish.*not(just_red); % remove red from white
     old_whitish = just_whitish; % used later for filtering task2func
@@ -66,8 +65,10 @@ for k = 1 : length(theFiles)
     just_blue = just_blue.*not(just_red); % if it is too red shouldn't be blue
     just_red = just_red.*not(just_blue); % and also the countrary is true
     just_blue = just_blue.*not(edges); %cut on edges to get more components... maybe...
+    %just_red = just_red.*not(edges); %cut on edges to get more components... maybe...
     just_whitish = just_whitish.*not(edges); %cut on edges to get more components... maybe...
-    %     just_red = just_red.*not(edges);
+    
+    
     
     %% FILTERING
     
@@ -128,7 +129,7 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each RED object
-    [B,L,N] = bwboundaries(just_red);
+    [B,L,N] = bwboundaries(just_red,4);
     %get stats
     stats =  regionprops(L,'BoundingBox','Centroid');
     BBox = cat(1,stats.BoundingBox);
@@ -143,22 +144,22 @@ for k = 1 : length(theFiles)
         y = BBox(i,2);
         width = BBox(i,3);
         height = BBox(i,4);
-        if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 10 && height >10 && height < 150
+        if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 12 && height >12 && height < 150
             hypothesisRed = [hypothesisRed; [y y+height x x+width]];
         end
-        if abs(width-2*height)<width*0.3 && width < 150 && width > 10 && height > 5 && height < 70
+        if abs(width-2*height)<width*0.4 && width < 150 && width > 10 && height > 5 && height < 70
             if abs(Centroids(i,1)-center(1))<width*0.1
                 if Centroids(i,2)-center(2)>0
-                    hypothesisRedExt = [hypothesisRedExt; [y-height*1.5 y+height x x+width]];
+                    hypothesisRedExt = [hypothesisRedExt; [y-height*1.5 y+height x-2 x+width+2]];
                 else
-                    hypothesisRedExt = [hypothesisRedExt; [y y+height*2.5 x x+width]];
+                    hypothesisRedExt = [hypothesisRedExt; [y y+height*2.5 x-2 x+width+2]];
                 end
             end
         end
     end
     
     %get outlines of each WHITE object
-    [B,L,N] = bwboundaries(just_whitish,4);
+    [B,L,N] = bwboundaries(just_whitish);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -195,8 +196,8 @@ for k = 1 : length(theFiles)
         %boxArea = (BoundingBox(4)-BoundingBox(3))*(BoundingBox(2)-BoundingBox(1));
         if abs(width-height)<abs(mean([width height])*0.5) && width < 150 && width > 5 && height > 5 && height < 150
             center = [x+width/2 y+height/2];
-            width = width * 5/3;
-            height = height * 5/3;
+            width = width * 7/4;
+            height = height * 7/4;
             hypothesisYellow = [hypothesisYellow; [center(2)-height/2 center(2)+height/2 center(1)-width/2 center(1)+width/2]];
         end
     end
@@ -344,26 +345,15 @@ for k = 1 : length(theFiles)
     %% Print
     
     figure();
-    subplot(1,3,1);imshow(all_masks_white);title(k, 'FontSize', 15);
-    
-    subplot(1,3,2);imshow(all_masks_white_old);title(k, 'FontSize', 15);
-    
-    
-    
-    % draw what we found
+    subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
     
     hold on
-    for i = 1 : size(signs_founded,1)
-        pxd = [0 1 1 0]*(signs_founded(i,4)-signs_founded(i,3)) + signs_founded(i,3);
-        pyd = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
-        patch(pxd, pyd, 'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
-    end
     
-    %     for i = 1 : size(hypothesisRedExt,1)
-    %         pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
-    %         pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
-    %         patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
-    %     end
+    for i = 1 : size(hypothesisRedExt,1)
+        pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
+        pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
+        patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
+    end
     
     %draw ground truth
     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
@@ -372,6 +362,21 @@ for k = 1 : length(theFiles)
         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
         patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
+    end
+    
+    hold off
+    
+    subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
+    
+    subplot(1,3,3);imshow(original);title(k, 'Fontsize', 15);
+    
+    % draw what we found
+    
+    hold on
+    for i = 1 : size(signs_founded,1)
+        pxd = [0 1 1 0]*(signs_founded(i,4)-signs_founded(i,3)) + signs_founded(i,3);
+        pyd = [0 0 1 1]*(signs_founded(i,2)-signs_founded(i,1)) + signs_founded(i,1);
+        patch(pxd, pyd, 'White', 'FaceColor', [0.8,1,0], 'FaceAlpha', 0.6);
     end
     
     hold off

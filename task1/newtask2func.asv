@@ -17,6 +17,15 @@ Rmin = ceil(Rmax/2);
 % Find all the blue dark circles in the image
 %[centersBlueDark, radiiBlueDark] = imfindcircles(blueMask, [Rmin Rmax],'ObjectPolarity','dark','Sensitivity',0.90);
 
+if size(centersBlueBright,1)==0
+    Rmx = ceil(min(window_size)/2) + 2;
+    Rmn = ceil(Rmax/2);
+    [centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmn Rmx],'ObjectPolarity','bright','Sensitivity',0.90);
+    figure();imshow(all_masks_white);
+    uiwait(warndlg('More than one'));
+    centersBlueBright
+end
+
 % Find all the blue bright circles in the image
 [centersRedBright, radiiRedBright] = imfindcircles(redMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
 % Find all the blue dark circles in the image
@@ -131,6 +140,9 @@ score_white4 = sum(sum(tria_mask4.*whitishMask))/sum(sum(tria_mask4));
 score_red3 = sum(sum(tria_mask3.*redMask))/sum(sum(tria_mask3));
 score_red5 = sum(sum(tria_mask5.*redMask))/sum(sum(tria_mask5));
 
+score_yellow3 = sum(sum(tria_mask3.*yellowMask))/sum(sum(tria_mask3));
+score_yellow5 = sum(sum(tria_mask5.*yellowMask))/sum(sum(tria_mask5));
+
 score_red6 = sum(sum(circ_mask6.*redMask))/area_mask6;
 score_red7 = sum(sum(circ_mask7.*redMask))/area_mask7;
 
@@ -159,33 +171,21 @@ if score_yellow10 > 0.3 && score_white11 > 0.3
 end
 
 %% DETECT DANGER (Needs polygon/line recognition) [WEAK]
-% if (score_red2 > 0.5 && score_red3 < 0.5)% && score_red9 < 0.6) %&& (redl_sides(2)>0||l_sides(2)>0)||(redl_sides(3)>0||l_sides(3)>0))
-%     result = 'dangerbycolor';
-% end
-
-if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.3 && score_white2 < 0.55
+if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerbyoneline';
 end
 
-if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red9 < 0.5 && score_red1 < 0.4 && score_red2 > 0.4 && score_red3 < 0.4 && score_white2 < 0.55
+if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerby2line';
 end
 
-% if score_red2 > 0.5 && score_red3 < 0.3 && score_red9 < 0.3 && redl_sides(2) > 0 && redl_sides(3) > 0
-%     result = 'dangerfoolish';
-% end
-
 %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [WEAK]
-% if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 && strcmp(result,'danger')~=1
-%     result = 'gpriofirst';
-% end
-
-if score_white4 < 0.5 && score_red4 > 0.3 && score_red5 < 0.3 && score_red2 < 0.25 && (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red1 < 0.4
-    result = 'gprio1line';
+if (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
+    result = 'gpriobyoneline';
 end
 
-if score_white4 < 0.5 && score_red4 > 0.3 && score_red5 < 0.3 && score_red2 < 0.25 && (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red1 < 0.4 
-    result = 'gprio2line';
+if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
+    result = 'gprioby2line';
 end
 
 %% DETECT MANDATORY
@@ -199,20 +199,20 @@ if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 
 end
 
 %% DETECT PROHIBITORY
-if score_red6 > 0.6 && score_red7 < 0.5
+if score_red6 > 0.6 && score_red7 < 0.5 && score_yellow7 < 0.15
     if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
         if score_red6 > 0.8
             result = 'prohibitory2circles';
             newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         end
-    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
+    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
         result = 'prohibitory1circle';
     end
 end
 
 %% DETECT STOP <----- not good enough, too many errors
 if score_white9t < 0.4 && score_white9b < 0.4 && score_red9t > 0.5 && score_red9b > 0.5 && score_red8 < 0.7 && score_white8 > 0.1
-    result = 'stop';
+    %result = 'stop';
     if size(centersRedBright,1)==1
         newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         result = 'stop--circle';
