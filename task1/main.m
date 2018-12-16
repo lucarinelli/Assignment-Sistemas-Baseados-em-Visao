@@ -325,7 +325,7 @@ for k = 1 : length(theFiles)
         bad_precision_names = [bad_recall_names; baseFileName];
     end
     
-    total_output = [ total_output; signs_founded];
+    total_output = [ total_output; baseFileName {signs_founded}];
     
     drawnow; % Force display to update immediately.
 end
