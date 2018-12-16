@@ -197,7 +197,7 @@ for zz=1:length(directory)
     
     AAAA(zz).max_maxAxis = max_maxAxis;
     AAAA(zz).min_maxAxis = min_maxAxis;
-%     AAAA(zz).average_maxAxis = average_maxAxis;
+    AAAA(zz).average_maxAxis = average_maxAxis;
     
     
     
@@ -210,7 +210,7 @@ for zz=1:length(directory)
     
     CCCC(zz).C_max_maxAxis = C_max_maxAxis;
     CCCC(zz).C_min_maxAxis = C_min_maxAxis;
-%     CCCC(zz).C_average_maxAxis = C_average_maxAxis;
+    CCCC(zz).C_average_maxAxis = C_average_maxAxis;
     
 end
 
@@ -230,7 +230,7 @@ for zz=1:length(directory)
     
     AAAA(zz).max_minAxis = max_minAxis;
     AAAA(zz).min_minAxis = min_minAxis;
-%     AAAA(zz).average_minAxis = average_minAxis;
+    AAAA(zz).average_minAxis = average_minAxis;
     
     
     %     hold on
@@ -242,7 +242,7 @@ for zz=1:length(directory)
     
     CCCC(zz).C_max_minAxis = C_max_minAxis;
     CCCC(zz).C_min_minAxis = C_min_minAxis;
-%     CCCC(zz).C_average_minAxis = C_average_minAxis;
+    CCCC(zz).C_average_minAxis = C_average_minAxis;
        
 end
 
