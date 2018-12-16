@@ -131,6 +131,9 @@ score_white4 = sum(sum(tria_mask4.*whitishMask))/sum(sum(tria_mask4));
 score_red3 = sum(sum(tria_mask3.*redMask))/sum(sum(tria_mask3));
 score_red5 = sum(sum(tria_mask5.*redMask))/sum(sum(tria_mask5));
 
+score_yellow3 = sum(sum(tria_mask3.*yellowMask))/sum(sum(tria_mask3));
+score_yellow5 = sum(sum(tria_mask5.*yellowMask))/sum(sum(tria_mask5));
+
 score_red6 = sum(sum(circ_mask6.*redMask))/area_mask6;
 score_red7 = sum(sum(circ_mask7.*redMask))/area_mask7;
 
@@ -159,20 +162,20 @@ if score_yellow10 > 0.3 && score_white11 > 0.3
 end
 
 %% DETECT DANGER (Needs polygon/line recognition) [WEAK]
-if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65
+if (redl_sides(2) > 0 || redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerbyoneline';
 end
 
-if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65
+if (redl_sides(2) > 0 && redl_sides(3) > 0) && score_red2 > 0.4 && score_red3 < 0.15 && score_white2 < 0.65 && score_yellow3 < 0.15
     result = 'dangerby2line';
 end
 
 %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [WEAK]
-if (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65
+if (redl_sides(1) > 0 || redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
     result = 'gpriobyoneline';
 end
 
-if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65
+if (redl_sides(1) > 0 && redl_sides(4) > 0) && score_red4 > 0.4 && score_red5 < 0.15 && score_white4 < 0.65 && score_yellow5 < 0.15
     result = 'gprioby2line';
 end
 
@@ -187,13 +190,13 @@ if score_blue1 > 0.5 && score_white1 < 0.4 && score_red2 < 0.65 && score_red4 < 
 end
 
 %% DETECT PROHIBITORY
-if score_red6 > 0.6 && score_red7 < 0.5
+if score_red6 > 0.6 && score_red7 < 0.5 && score_yellow7 < 0.15
     if size(centersRedBright,1)==1 && size(centersRedDark,1)==1
         if score_red6 > 0.8
             result = 'prohibitory2circles';
             newROI = [centersRedBright(2)-radiiRedBright centersRedBright(2)+radiiRedBright centersRedBright(1)-radiiRedBright centersRedBright(1)+radiiRedBright];
         end
-    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35 && score_yellow7 < 0.2
+    elseif size(centersRedBright,1)==1 && score_red6 > 0.6 && score_red7 < 0.6 && score_blue1 < 0.1 && score_white1 > 0.35
         result = 'prohibitory1circle';
     end
 end
