@@ -13,7 +13,7 @@ load('ground_truth.mat')
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'some';
+imagesFolder = 'images';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
     errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);

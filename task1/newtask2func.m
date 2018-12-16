@@ -9,8 +9,8 @@ all_masks_white = cat(3,255*(redMask|whitishMask|yellowMask),255*(whitishMask|ye
     
 %% CIRCLES
 %dinamically adjust radii filter
-Rmax = ceil(max(window_size)/2)+2;
-Rmin = ceil(min([Rmax/2 min(window_size)/2]));
+Rmax = ceil(max([max(window_size)/2 6]))+2;
+Rmin = ceil(max([min([Rmax/2 min(window_size)/2]) 8]));
 
 % Find all the blue bright circles in the image
 [centersBlueBright, radiiBlueBright] = imfindcircles(blueMask,[Rmin Rmax],'ObjectPolarity','bright','Sensitivity',0.90);
