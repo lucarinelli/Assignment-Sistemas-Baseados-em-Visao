@@ -7,8 +7,10 @@ clc
 warning('off','images:imfindcircles:warnForSmallRadius');
 
 %% load ground truth
-
 load('ground_truth.mat')
+
+%% store our solution
+total_output = {};
 
 %% load all the images
 
@@ -110,7 +112,7 @@ for k = 1 : length(theFiles)
     %% REGIONPROPS STUFF
     
     %get outlines of each BLUE object
-    [B,L,N] = bwboundaries(just_blue,4);
+    [~,L,N] = bwboundaries(just_blue,4);
     %get stats
     stats =  regionprops(L,'BoundingBox');%,'ConvexHull','Area');
     BBox = cat(1,stats.BoundingBox);
@@ -129,7 +131,7 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each RED object
-    [B,L,N] = bwboundaries(just_red,4);
+    [~,L,N] = bwboundaries(just_red,4);
     %get stats
     stats =  regionprops(L,'BoundingBox','Centroid');
     BBox = cat(1,stats.BoundingBox);
@@ -159,7 +161,7 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each WHITE object
-    [B,L,N] = bwboundaries(just_whitish);
+    [~,L,N] = bwboundaries(just_whitish);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -181,7 +183,7 @@ for k = 1 : length(theFiles)
     end
     
     %get outlines of each YELLOW object
-    [B,L,N] = bwboundaries(just_yellow);
+    [~,L,N] = bwboundaries(just_yellow);
     %get stats
     stats =  regionprops(L,'BoundingBox');
     BBox = cat(1,stats.BoundingBox);
@@ -244,9 +246,11 @@ for k = 1 : length(theFiles)
     
     %% Print
     
-    figure();
-%     subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
-%     
+    gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
+    gt_rectangles = ground_truth(gt_index).gt;
+    
+    figure();imshow(all_masks_white);title('First stage', 'FontSize', 15);
+    
 %     hold on
 %     
 %     for i = 1 : size(hypothesisRedExt,1)
@@ -256,8 +260,7 @@ for k = 1 : length(theFiles)
 %     end
 %     
 %     %draw ground truth
-     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
-     gt_rectangles = ground_truth(gt_index).gt;
+%     
 %     for gti = 1 : size(gt_rectangles,1)
 %         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
 %         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
@@ -265,11 +268,10 @@ for k = 1 : length(theFiles)
 %     end
 %     
 %     hold off
-%     
-%     subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
-%     
-%     subplot(1,3,3);
-    imshow(original);title(k, 'Fontsize', 15);
+    
+    figure();imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
+    
+    figure();imshow(original);title(k, 'Fontsize', 15);
     
     % draw what we found
     
@@ -323,6 +325,8 @@ for k = 1 : length(theFiles)
         bad_precision_names = [bad_recall_names; baseFileName];
     end
     
+    total_output = [ total_output; signs_founded];
+    
     drawnow; % Force display to update immediately.
 end
 
@@ -333,3 +337,5 @@ fprintf(1, '\n\nPRECISION: %d  RECALL: %d\n', total_precision, total_recall);
 
 bad_recall_names
 bad_precision_names
+
+total_output
