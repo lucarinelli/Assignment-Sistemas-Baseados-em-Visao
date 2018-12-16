@@ -33,7 +33,7 @@ for ww = 1 : length(directory)
         Conv_image = bwconvhull(mask3);
         CC_conv = bwconncomp(Conv_image);
         region_convex = regionprops(CC_conv,'Area','BoundingBox', 'Centroid', 'MajorAxisLength','MinorAxisLength','Orientation','Perimeter','Eccentricity');
-        %Vett_features = Features_convex(CC_conv,ww,k,length(directory));
+        
         %figure();imshow(Conv_image);
         %figure();imshow(mask3);
         CC = bwconncomp(mask3);
