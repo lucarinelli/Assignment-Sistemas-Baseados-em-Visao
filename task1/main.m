@@ -245,30 +245,31 @@ for k = 1 : length(theFiles)
     %% Print
     
     figure();
-    subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
-    
-    hold on
-    
-    for i = 1 : size(hypothesisRedExt,1)
-        pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
-        pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
-        patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
-    end
-    
-    %draw ground truth
-    gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
-    gt_rectangles = ground_truth(gt_index).gt;
-    for gti = 1 : size(gt_rectangles,1)
-        px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
-        py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
-        patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
-    end
-    
-    hold off
-    
-    subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
-    
-    subplot(1,3,3);imshow(original);title(k, 'Fontsize', 15);
+%     subplot(1,3,1);imshow(all_masks_white);title('First stage', 'FontSize', 15);
+%     
+%     hold on
+%     
+%     for i = 1 : size(hypothesisRedExt,1)
+%         pxd = [0 1 1 0]*(hypothesisRedExt(i,4)-hypothesisRedExt(i,3)) + hypothesisRedExt(i,3);
+%         pyd = [0 0 1 1]*(hypothesisRedExt(i,2)-hypothesisRedExt(i,1)) + hypothesisRedExt(i,1);
+%         patch(pxd, pyd, 'White', 'FaceColor', [0.5,0,1], 'FaceAlpha', 0.6);
+%     end
+%     
+%     %draw ground truth
+     gt_index = find(strcmp({ground_truth.filename}, baseFileName)==1);
+     gt_rectangles = ground_truth(gt_index).gt;
+%     for gti = 1 : size(gt_rectangles,1)
+%         px = [0 1 1 0]*(gt_rectangles(gti,4)-gt_rectangles(gti,3)) + gt_rectangles(gti,3);
+%         py = [0 0 1 1]*(gt_rectangles(gti,2)-gt_rectangles(gti,1)) + gt_rectangles(gti,1);
+%         patch(px, py,'White', 'FaceColor', [1,1,1], 'FaceAlpha', 0.5);
+%     end
+%     
+%     hold off
+%     
+%     subplot(1,3,2);imshow(all_masks_white_old);title('Second stage', 'FontSize', 15);
+%     
+%     subplot(1,3,3);
+    imshow(original);title(k, 'Fontsize', 15);
     
     % draw what we found
     
