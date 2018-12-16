@@ -15,7 +15,7 @@ total_output = {};
 %% load all the images
 
 % Specify the folder where the images are
-imagesFolder = 'images';
+imagesFolder = 'some';
 % Check to make sure that folder actually exists.  Warn user if it doesn't.
 if ~isdir(imagesFolder)
     errorMessage = sprintf('Error: The following folder does not exist:\n%s', imagesFolder);
@@ -325,7 +325,7 @@ for k = 1 : length(theFiles)
         bad_precision_names = [bad_recall_names; baseFileName];
     end
     
-    total_output = [ total_output; baseFileName {signs_founded}];
+    total_output = [ total_output; {baseFileName {signs_founded}}];
     
     drawnow; % Force display to update immediately.
 end
@@ -334,8 +334,5 @@ total_precision = total_signs_true_positive/total_signs_positive;
 total_recall = total_signs_true_positive/total_signs_truth;
 
 fprintf(1, '\n\nPRECISION: %d  RECALL: %d\n', total_precision, total_recall);
-
-bad_recall_names
-bad_precision_names
 
 total_output

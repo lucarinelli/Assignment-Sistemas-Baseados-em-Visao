@@ -44,10 +44,7 @@ for k = 1 : length(theFiles)
     yellowMask = maskYellow(contrast);
     whitishMask = maskWhitish(contrast);
     gray = rgb2gray(contrast);
-%     hsv = rgb2hsv(contrast);
-%     gray_hsv = rgb2gray(hsv);
     edges = edge(gray,'canny');
-%     edges_hsv = edge(gray_hsv);
     
 %     figure();
 %     subplot(3,2,1);imshow(redMask);title('R');
@@ -201,7 +198,7 @@ for k = 1 : length(theFiles)
     end
     
     %% DETECT GIVE PRIORITY (Needs polygon/line recognition) [REALLY WEAK]
-    if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 && strcmp(result,'danger')~=1
+    if score_red4 > 0.22 && score_red5 < 0.5 && score_red4 > score_red2 %&& strcmp(result,'danger')~=1
         result = 'other';
     end
     

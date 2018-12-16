@@ -211,23 +211,23 @@ end
 
 if(strcmp(result,'unknown')~=1)
     Verdict = 1;
-    figure();imshow(all_masks_white);title(result);
-    hold on
-    for i = 1:length(red_lines)
-       xy = [red_lines(i).point1; red_lines(i).point2];
-       plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
-
-       % Plot beginnings and ends of lines
-       plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
-       plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
-
-    end
-    %Plot bright circles in blue
-    viscircles(centersBlueBright, radiiBlueBright,'Color','b');
-    %Plot dark circles in dashed red boundaries
-    viscircles(centersRedDark, radiiRedDark,'LineStyle','--','Color','r');
-    %Plot bright circles in blue
-    viscircles(centersRedBright, radiiRedBright,'Color','r');
+%     figure();imshow(all_masks_white);title(result);
+%     hold on
+%     for i = 1:length(red_lines)
+%        xy = [red_lines(i).point1; red_lines(i).point2];
+%        plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
+% 
+%        % Plot beginnings and ends of lines
+%        plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
+%        plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+% 
+%     end
+%     %Plot bright circles in blue
+%     viscircles(centersBlueBright, radiiBlueBright,'Color','b');
+%     %Plot dark circles in dashed red boundaries
+%     viscircles(centersRedDark, radiiRedDark,'LineStyle','--','Color','r');
+%     %Plot bright circles in blue
+%     viscircles(centersRedBright, radiiRedBright,'Color','r');
 %     subplot(2,2,1);imshow(redMask);title('R');
 %     subplot(2,2,2);imshow(blueMask);title('Blue');
 %     subplot(2,2,3);imshow(yellowMask);title('Y');
